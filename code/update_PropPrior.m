@@ -1,0 +1,93 @@
+function model = update_PropPrior(dat,model,opt,it_mod)
+% FORMAT [alpha,gn] = update_dirichlet_prior(alpha, meanLogX)
+% 
+% alpha    - Kx1 - Previous value of the Dirichlet parameters
+% meanLogX - Kx1 - Mean of the log of the observations (mean(log(X)))
+
+if ~opt.model.PropPrior.do
+    return;
+end
+
+if it_mod < opt.start_it.do_prop
+    return;
+end
+
+S0    = numel(dat);
+alpha = model.PropPrior.alpha;
+
+meanLogX = 0;
+for s=1:S0
+    meanLogX = meanLogX + log(spm_matcomp('softmax',dat{s}.gmm.prop));
+end
+meanLogX = meanLogX./S0;
+
+alpha    = double(alpha(:));
+logalpha = log(alpha);
+meanLogX = double(meanLogX(:));
+
+E  = NaN;
+for gn=1:100000
+    
+    % Compute objective function (negtive log-likelihood)
+    Eo = E;
+    E  = sum(gammaln(alpha)) ...
+         - gammaln(sum(alpha)) ...
+         - sum((alpha-1).*meanLogX);
+%     fprintf('E = %10.6g\n', E);
+    if E < Eo && abs(Eo - E) < 1E-7
+        % It sometimes overshoots during the first iterations but gets back
+        % on track on its own.
+        break
+    end
+    
+    % Compute grad/hess
+    g = alpha .* ( psi(alpha) - psi(sum(alpha)) - meanLogX);
+    H = - ( alpha .* psi(sum(alpha)) + alpha.^2 .* psi(1, sum(alpha)) );
+    H = H * H';
+    H = H + diag(alpha .* psi(alpha) + alpha.^2 .* psi(1, alpha));
+    H = spm_matcomp('LoadDiag', H);
+    
+    Update = H\g;
+    
+    % ---------------------------------------------------------------------
+    % Line search    
+    ok         = false;
+    oE         = E;
+    armijo     = 1;
+    ologalpha  = logalpha;    
+    for line_search=1:12
+        logalpha = ologalpha - armijo*Update;        
+        
+        alpha = exp(logalpha);
+        
+        E = sum(gammaln(alpha)) ...
+            - gammaln(sum(alpha)) ...
+            - sum((alpha - 1).*meanLogX);
+     
+        if E <= oE
+            ok = true;
+            break;
+        else
+            armijo = 0.5*armijo;
+        end        
+    end
+    
+    if ~ok
+        E        = oE;
+        logalpha = ologalpha;
+        alpha    = exp(logalpha);
+        break
+    end
+end
+
+model.PropPrior.alpha = alpha;
+model.PropPrior.norm  = S0*(gammaln(sum(alpha)) - sum(gammaln(alpha)));
+
+% Show results
+show_PropPrior(dat,model,opt);
+
+% Save updated PropPrior
+PropPrior = model.PropPrior;
+fname     = fullfile(opt.dir_model,'PropPrior.mat');
+save(fname,'PropPrior');
+%==========================================================================
