@@ -11,6 +11,7 @@ miss                       = get_par('missing_struct',obs);
 %--------------------------------------------------------------------------   
 dm_a                    = model.template.nii.dat.dim;
 mat_a                   = model.template.nii.mat;
+vs_a                    = sqrt(sum(mat_a(1:3,1:3).^2));
 K                       = dm_a(4);
 modality                = dat.modality{1}.name; 
 ff                      = get_ff(vs_s);   
@@ -147,6 +148,22 @@ if opt.clean.mrf.do
     Z = mrf_post(Z,vs_s,opt);
 end
 
+if opt.clean.cnn_mrf.do
+    % Ad-hoc CNN-MRF clean-up of lesion class (and writing to disk)
+    x    = cell(1,2);
+    x{1} = single(Z(:,:,:,opt.clean.cnn_mrf.les_cl) > opt.clean.cnn_mrf.val);
+    x{2} = 1 - x{1};
+
+    im_clean = spm_cnn_mrf('predict',opt.clean.cnn_mrf.pth_net,x,'speak',0);
+    im_clean = im_clean{1};
+    clear x
+    
+    fname = fullfile(dat.dir.seg,['cles_' nam{1} '.nii']);
+    spm_misc('create_nii',fname,im_clean,mat_s,[spm_type('float32') spm_platform('bigend')],'Lesion (native)');
+        
+    res.cles = nifti(fname);
+end
+
 % Write final segmentation to disk
 %--------------------------------------------------------------------------
 
@@ -157,16 +174,13 @@ for k=1:size(Z,4)
     
     res.c{k} = nifti(fname);
 end
-% files = spm_select('FPList',dat.dir.seg,'^c.*\.nii$'); spm_check_registration(char(obs_fnames, files)); 
 
 % Warped to template space (wc)   
 C = zeros(dm_a,'single');
 for k=1:size(Z,4)
-    [c,w]      = spm_diffeo('push',Z(:,:,:,k),y,dm_a(1:3));
-    vx         = sqrt(sum(mat_a(1:3,1:3).^2));
-    spm_field('boundary',1);
-    C(:,:,:,k) = spm_field(w,c,[vx  1e-6 1e-4 0  3 2]);
-    clear w
+    [c,w]      = spm_diffeo('push',Z(:,:,:,k),y,dm_a(1:3));    
+    C(:,:,:,k) = spm_field(w,c,[vs_a  1e-6 1e-4 0  3 2]);
+    clear w c
 end
 
 C = max(C,eps);
@@ -177,8 +191,20 @@ for k=1:size(Z,4)
     
     res.wc{k} = nifti(fname);
 end
-clear y s C
-% files = spm_select('FPList',dat.dir.seg,'^wc.*\.nii$'); spm_check_registration(char(obs_fnames, files)); 
+clear s C
+
+if opt.clean.cnn_mrf.do
+    [c,w]    = spm_diffeo('push',im_clean,y,dm_a(1:3));    
+    im_clean = spm_field(w,c,[vs_a  1e-6 1e-4 0  3 2]);
+    clear w c
+    
+    fname = fullfile(dat.dir.seg,['wcles_' nam{1} '.nii']);
+    spm_misc('create_nii',fname,im_clean,mat_a,[spm_type('float32') spm_platform('bigend')],'Lesion (template)');
+    clear im_clean
+    
+    res.wcles = nifti(fname);
+end
+clear y
 
 if opt.seg.write_mllabels
     % Write ML labels to disk

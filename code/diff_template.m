@@ -7,12 +7,9 @@ ln_prop         = reshape(prop,1,1,K);
 R               = null(ones(1,K));
 [~,xbb,ybb,zbb] = get_bb([],[],[],bb);
 
-if strcmpi(opt.template.sym,'all')
+if opt.template.sym
     % Make all classes left-right symmetric
     Z = Z + Z(end:-1:1,:,:,:);
-elseif strcmpi(opt.template.sym,'lesion')    
-    % Make lesion class left-right symmetric
-    Z = Z(:,:,:,opt.template.les_cls) + Z(end:-1:1,:,:,opt.template.les_cls);
 end
 
 % Re-organise sufficient statistics to a form that is easier to work with

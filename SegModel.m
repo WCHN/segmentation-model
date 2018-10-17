@@ -150,14 +150,27 @@ function SegModel_init(opt)
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
 if ~isfield(opt.dep,'aux_toolbox')
-    error('~isfield(opt.dir,''aux_toolbox'')')
-end
-if ~isfield(opt.dep,'dist_toolbox')
-    error('~isfield(opt.dir,''dist_toolbox'')')
+    error('~isfield(opt.dep,''aux_toolbox'')')
+else
+    if ~isdeployed, addpath(opt.dep.aux_toolbox);  end
 end
 
-if ~isdeployed, addpath(opt.dep.aux_toolbox);  end
-if ~isdeployed, addpath(opt.dep.dist_toolbox); end
+if ~isfield(opt.dep,'dist_toolbox')
+    error('~isfield(opt.dep,''dist_toolbox'')')
+else
+    if ~isdeployed, addpath(opt.dep.dist_toolbox); end
+end
+
+if isfield(opt,'clean') && isfield(opt.clean,'cnn_mrf') && isfield(opt.clean.cnn_mrf,'do')
+    if opt.clean.cnn_mrf.do
+        if ~isfield(opt.dep,'cnn_mrf')
+            error('~isfield(opt.dep,''cnn_mrf'')')
+        else
+            if ~isdeployed, addpath(opt.dep.cnn_mrf); end
+        end
+    end
+end
+
 if ~isdeployed, addpath(fullfile(fileparts(mfilename('fullpath')),'code')); end
 
 set_globals;

@@ -194,10 +194,7 @@ if ~isfield(opt.template,'rem_neck')
     opt.template.rem_neck     = true;
 end
 if ~isfield(opt.template,'sym')
-    opt.template.sym          = 'all';
-end
-if ~isfield(opt.template,'les_cl')
-    opt.template.les_cl       = 6;
+    opt.template.sym          = true;
 end
 if ~isfield(opt.template,'niter')
     opt.template.niter        = 16;
@@ -320,6 +317,26 @@ if ~isfield(opt.clean.mrf,'strength')
 end
 if ~isfield(opt.clean.mrf,'niter')
     opt.clean.mrf.niter    = 10;
+end
+
+% opt.clean.cnn_mrf
+if ~isfield(opt.clean,'cnn_mrf') 
+    opt.clean.cnn_mrf         = struct;
+end
+if ~isfield(opt.clean.cnn_mrf,'do')
+    opt.clean.cnn_mrf.do      = false;
+end
+if ~isfield(opt.clean.cnn_mrf,'lkp')
+    opt.clean.cnn_mrf.lkp     = [];
+end
+if ~isfield(opt.clean.cnn_mrf,'val')
+    opt.clean.cnn_mrf.val     = 0.1;
+end
+if ~isfield(opt.clean.cnn_mrf,'pth_net')
+    opt.clean.cnn_mrf.pth_net = '';
+end
+if ~isfield(opt.clean.cnn_mrf,'les_cl')
+    opt.clean.cnn_mrf.les_cl  = 0;
 end
 
 % opt.start_it
