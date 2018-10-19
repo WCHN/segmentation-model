@@ -168,7 +168,7 @@ end
 model.template.nii = nii_a;
 
 % Update values to be used for FOV voxels when warping 
-model = init_template_bg(model);
+model = init_template_bg(model,opt);
 
 if verbose>=1
     % Show soft-maxed template

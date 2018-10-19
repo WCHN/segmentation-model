@@ -92,7 +92,7 @@ model.template.nii = nifti(pth_template);
 model = resize_template(model,opt);
 
 % Get values to be used for FOV voxels when warping 
-model = init_template_bg(model);
+model = init_template_bg(model,opt);
 
 % Init template objval
 model.template.objval.post  = 0;

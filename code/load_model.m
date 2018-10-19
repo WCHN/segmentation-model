@@ -19,7 +19,7 @@ for s=1:S0
         opt.template.K = K; 
 
         % Get values to be used for FOV voxels when warping 
-        model{s} = init_template_bg(model{s});
+        model{s} = init_template_bg(model{s},opt);
 
         fprintf('1 | Loaded template with %i classes.\n',K);        
     else

@@ -202,6 +202,9 @@ end
 if ~isfield(opt.template,'verbose')
     opt.template.verbose      = 0; % [0,1,2]
 end
+if ~isfield(opt.template,'bg_class')
+    opt.template.bg_class = 0;
+end
 
 % opt.seg
 if ~isfield(opt,'seg') 
