@@ -382,9 +382,9 @@ if isempty(opt.ct.GaussPrior)
     lb_prW.KL_qVpV = 0;
     lb_prW.ElnDetV = zeros(1,opt.template.K);
 
-    b  = 1e4*ones(1,opt.template.K);
-    n  = 1e0*ones(1,opt.template.K);    
-    MU = reshape([linspace(0,50,opt.template.K - 3) 800 -100 -1000],[1 opt.template.K]);
+    b  = ones(1,opt.template.K);
+    n  = ones(1,opt.template.K);    
+    MU = 30*ones([1 opt.template.K]);
     W  = ones([1 1 opt.template.K]);
 
     opt.ct.GaussPrior = {MU,b,W,n,'CT',lb_prW,1:opt.template.K};   
