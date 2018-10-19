@@ -305,7 +305,7 @@ if ~isfield(opt,'clean')
     opt.clean          = struct;
 end
 if ~isfield(opt.clean,'eyeballs')
-    opt.clean.eyeballs = false;
+    opt.clean.eyeballs = true;
 end
 
 % opt.clean.mrf
@@ -313,7 +313,7 @@ if ~isfield(opt.clean,'mrf')
     opt.clean.mrf          = struct;
 end
 if ~isfield(opt.clean.mrf,'do')
-    opt.clean.mrf.do       = false;
+    opt.clean.mrf.do       = true;
 end
 if ~isfield(opt.clean.mrf,'strength')
     opt.clean.mrf.strength = 2;
