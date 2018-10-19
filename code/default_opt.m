@@ -279,8 +279,11 @@ end
 if ~isfield(opt.prop,'tol')
     opt.prop.tol   = 1e-4;
 end
-if ~isfield(opt.prop,'reg')
-    opt.prop.reg   = 0;
+if ~isfield(opt.prop,'reg')     
+    opt.prop.reg   = 1;
+end
+if opt.prop.reg <= 0
+    error('opt.prop.reg <= 0');
 end
 if ~isfield(opt.prop,'do')
     opt.prop.do    = true;

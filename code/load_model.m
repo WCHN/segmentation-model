@@ -41,11 +41,7 @@ for s=1:S0
         load(opt.gmm.pth_PropPrior,'PropPrior');
         model{s}.PropPrior = PropPrior;    
     else
-        if opt.prop.reg == 0
-            alpha = ones(1,K)*1/K;
-        else
-            alpha = ones(1,K)*opt.prop.reg;
-        end
+        alpha = ones(1,K)*opt.prop.reg;
 
         model{s}.PropPrior.alpha = alpha;
         model{s}.PropPrior.norm  = 0;

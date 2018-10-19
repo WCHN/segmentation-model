@@ -99,7 +99,7 @@ model.template.objval.post  = 0;
 model.template.objval.likel = 0;
 model.template.objval.pr    = 0;
 
-alpha           = ones(1,K)/K;
+alpha           = ones(1,K)*opt.prop.reg;
 PropPrior.alpha = alpha;
 PropPrior.norm  = 0;
 model.PropPrior = PropPrior;
