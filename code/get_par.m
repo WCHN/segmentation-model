@@ -2,11 +2,11 @@ function varargout = get_par(varargin)
 %__________________________________________________________________________
 % Get various parameters of the model
 %
-% FORMAT lkp  = get_par('lkp',modality,opt)
-% FORMAT miss = get_par('missing_struct',obs)
-% FORMAT ix   = get_par('ix_zero_resp',population,lkp,opt)
-% FORMAT tiny = get_par('tiny')
-% FORMAT [bg,gf] = get_par('bg_fg',K)
+% FORMAT lkp     = get_par('lkp',modality,opt)
+% FORMAT miss    = get_par('missing_struct',obs)
+% FORMAT ix      = get_par('ix_zero_resp',population,lkp,opt)
+% FORMAT tiny    = get_par('tiny')
+% FORMAT [bg,gf] = get_par('bg_fg',bg,K)
 %
 % FORMAT help get_par>function
 % Returns the help file of the selected function.
@@ -101,24 +101,9 @@ tiny = 1e-4;
 %==========================================================================
 
 %==========================================================================
-function [bg,fg] = get_bg_fg(K)
-% FORMAT [bg,fg] = get_par('bg_fg',K)
+function [bg,fg] = get_bg_fg(bg,K)
+% FORMAT [bg,fg] = get_par('bg_fg',bg,K)
 %__________________________________________________________________________
-if     K == 6
-    bg  = [4 5 6];
-elseif K == 7
-    bg  = [4 5 6];
-elseif K == 8
-    bg  = [6 7 8];    
-elseif K == 9
-    bg  = [7 8 9];    
-elseif K == 10
-    bg  = [8 9 10];
-elseif K == 11
-    bg  = [9 10 11];
-elseif K == 12
-    bg  = [10 11 12];    
-end
 fg  = 1:K;    
 msk = ismember(fg,bg);
 fg  = fg(~msk);

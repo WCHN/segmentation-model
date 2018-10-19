@@ -222,6 +222,9 @@ end
 if ~isfield(opt.seg,'write_mllabels')
     opt.seg.write_mllabels = true;
 end
+if ~isfield(opt.seg,'bg')
+    opt.seg.bg             = opt.template.K;
+end
 
 % opt.seg.mrf
 if ~isfield(opt.seg,'mrf') 
