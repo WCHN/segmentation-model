@@ -42,7 +42,7 @@ function SegModel_train(dat,opt)
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
-SegModel_init(opt);
+dat = SegModel_init(dat,opt);
 
 %--------------------------------------------------------------------------
 % Parse options
@@ -122,7 +122,7 @@ function res = SegModel_segment(dat,opt)
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
-SegModel_init(opt);
+dat = SegModel_init(dat,opt);
 
 %--------------------------------------------------------------------------
 % Parse options
@@ -144,7 +144,7 @@ SegModel_init(opt);
 %==========================================================================
 
 %==========================================================================
-function SegModel_init(opt)
+function dat = SegModel_init(dat,opt)
 % Initialise segmentation model
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
@@ -174,4 +174,11 @@ end
 if ~isdeployed, addpath(fullfile(fileparts(mfilename('fullpath')),'code')); end
 
 set_globals;
+
+if ischar(dat)
+    dat = spm_json_manager('init_dat',dat);
+    if ~(isfield(opt,'template') && isfield(opt.template,'do') && opt.template.do)
+        dat = dat(1);
+    end
+end
 %==========================================================================
