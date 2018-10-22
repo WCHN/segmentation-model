@@ -363,6 +363,9 @@ if    opt.template.do && opt.template.load_a_der
 
     % Push responsibilities from subject space to template space
     y                   = spm_warps('transform',Affine,y);
+    if dm_s(3) == 1
+        y(:,:,:,3) = 1;
+    end
     [Z,dat.template.bb] = push_responsibilities(Z,y,dm_a(1:3),mat_a,dat.template.bb);                      
     clear y
     

@@ -29,7 +29,10 @@ end
 % Compute objective function and its first and second derivatives
 %--------------------------------------------------------------------------
 
-y1     = spm_warps('transform',Affine,y);
+y1 = spm_warps('transform',Affine,y);
+if dm(3) == 1
+    y1(:,:,:,3) = 1;
+end
 dA     = zeros(4,4,Nr);
 for i1=1:Nr
     dA(:,:,i1) = mat_a\dE(:,:,i1)*mat_s;

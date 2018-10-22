@@ -87,7 +87,10 @@ if opt.template.load_a_der
         E      = spm_dexpm(dat{s}.reg.r,opt.reg.B);
         Affine = mat_a\E*mat_s;                
         y      = spm_warps('transform',Affine,spm_warps('identity',dm_s));
-        
+        if dm_s(3) == 1
+            y(:,:,:,3) = 1;
+        end
+
         % Push responsibilities in subject space to template space
         [Z,dat{s}.template.bb] = push_responsibilities(Z,y,dm_a(1:3),mat_a,dat{s}.template.bb);
         y                      = [];        

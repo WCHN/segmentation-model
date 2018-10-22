@@ -66,6 +66,9 @@ E        = spm_dexpm(dat.reg.r,opt.reg.B);
 Affine   = model.template.nii.mat\E*mat_s;               
 Template = warp_template(model,y,Affine);
 y        = spm_warps('transform',Affine,y);
+if dm_s(3) == 1
+    y(:,:,:,3) = 1;
+end
 
 %--------------------------------------------------------------------------
 % Get responsibilities

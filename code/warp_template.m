@@ -6,6 +6,9 @@ K    = dm_a(4);
  
 y    = spm_warps('transform',Affine,y);
 dm_s = size(y);
+if dm_a(3) == 1
+    y(:,:,:,3) = 1;
+end
 
 % Template0 = single(nii.dat(:,:,:,:));
 Template  = zeros([dm_s(1:3) K],'single');

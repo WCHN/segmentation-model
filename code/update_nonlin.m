@@ -50,6 +50,9 @@ end
 g  = zeros([dm(1:3),3],'single');
 H  = zeros([dm(1:3),6],'single');
 y1 = spm_warps('transform',Affine,y);
+if dm(3) == 1
+    y1(:,:,:,3) = 1;
+end
 if int_args > 1
     J  = spm_diffeo('def2jac',y1);
 else
