@@ -165,23 +165,45 @@ clear bf obs x iy
 if opt.clean.eyeballs
     % Ad-hoc clean-up to remove crap outside of brain from brain classes           
     Z = clean_eyeballs(Z,model,y,opt);    
-    % k=4;d=38;figure(666);subplot(121);imagesc(squeeze(Z(:,:,d,k)));subplot(122);imagesc(squeeze(Z1(:,:,d,k)))
+    % k=4;d=ceil(dm_s(3)/2);figure(666);subplot(121);imagesc(squeeze(Z(:,:,d,k)));subplot(122);imagesc(squeeze(Z1(:,:,d,k)))
 end
 
 if opt.clean.cnn_mrf.do
-    % Ad-hoc CNN-MRF clean-up of lesion class (and writing to disk)
+    % Ad-hoc CNN-MRF clean-up of lesion class (and writing to disk)        
     x    = cell(1,2);
     x{1} = single(Z(:,:,:,opt.clean.cnn_mrf.les_cl) > opt.clean.cnn_mrf.val);
     x{2} = 1 - x{1};
 
-    im_clean = spm_cnn_mrf('predict',opt.clean.cnn_mrf.pth_net,x,'speak',0,'w_on',0.5,'nit',40);
+    im_clean = spm_cnn_mrf('predict',opt.clean.cnn_mrf.pth_net,x,'speak',0,'w_on',0.9,'nit',40);
     im_clean = im_clean{1};
     clear x
     
+    % Get largest connected component
+    les_msk = im_clean > opt.clean.cnn_mrf.val;
+    L       = bwlabeln(les_msk);
+    nL      = unique(L);
+    vls     = zeros([1 numel(nL)]);
+    for i=1:numel(nL)
+        vls(i) = sum(sum(sum(L == nL(i))));
+    end
+    [~,ix] = sort(vls);
+    
+    les_msk = L == (ix(end - 1) - 1);
+    les_msk = imfill(les_msk,'holes');
+%     figure;imshow3D(les_msk)    
+    les_msk = single(les_msk);
+    clear im_clean
+    
     fname = fullfile(dat.dir.seg,['cles_' nam{1} '.nii']);
-    spm_misc('create_nii',fname,im_clean > opt.clean.cnn_mrf.val,mat_s,[spm_type('float32') spm_platform('bigend')],'Lesion (native)');
+    spm_misc('create_nii',fname,les_msk,mat_s,[spm_type('float32') spm_platform('bigend')],'Lesion (native)');
         
     res.cles = nifti(fname);
+    
+    if 0 && isfield(dat,'label')
+        gt  = dat.label{1}.nii.dat(:,:,:) > 0;
+        prd = logical(les_msk);        
+        fprintf('ds=%0.3f\n',dice(prd,gt));
+    end
 end
 
 if opt.clean.mrf.do
@@ -220,13 +242,13 @@ end
 clear s C
 
 if opt.clean.cnn_mrf.do
-    [c,w]    = spm_diffeo('push',im_clean,y,dm_a(1:3));    
-    im_clean = spm_field(w,c,[vs_a  1e-6 1e-4 0  3 2]);
+    [c,w]   = spm_diffeo('push',les_msk,y,dm_a(1:3));    
+    les_msk = spm_field(w,c,[vs_a  1e-6 1e-4 0  3 2]);
     clear w c
     
     fname = fullfile(dat.dir.seg,['wcles_' nam{1} '.nii']);
-    spm_misc('create_nii',fname,im_clean > opt.clean.cnn_mrf.val,mat_a,[spm_type('float32') spm_platform('bigend')],'Lesion (template)');
-    clear im_clean
+    spm_misc('create_nii',fname,les_msk > opt.clean.cnn_mrf.val,mat_a,[spm_type('float32') spm_platform('bigend')],'Lesion (template)');
+    clear les_msk
     
     res.wcles = nifti(fname);
 end
