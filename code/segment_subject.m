@@ -97,7 +97,6 @@ if opt.verbose.gmm >= 3
     chn_names{end + 1}        = 'Z';
 end
 
-if opt.template.do && it_mod == 1 && opt.reg.do_aff
 if ~opt.template.do
     % Set initial posteriors to same values as GaussPrior
     dat.gmm.cluster{1}{1} = GaussPrior{1};
@@ -105,10 +104,20 @@ if ~opt.template.do
     dat.gmm.cluster{2}{1} = GaussPrior{3};
     dat.gmm.cluster{2}{2} = GaussPrior{4};
 end
+
+if ~opt.template.do && dm_s(3) > 1
+
+    dat = maffreg_template2subject(dat,model,opt);
+    
+    E      = spm_dexpm(dat.reg.r,opt.reg.B);
+    Affine = model.template.nii.mat\E*mat_s;
+
+    % Warp template to subject      
+    Template = warp_template(model,y,Affine);
+elseif it_mod == 1 && opt.reg.do_aff
     
     %----------------------------------------------------------------------
-    % When learning from populations, for the first iteration, here we align 
-    % the template by updating the affine parameters until convergence
+    % Align the template by updating the affine parameters until convergence
     %----------------------------------------------------------------------
 
     % Affine matrix    
@@ -122,15 +131,16 @@ end
     do_mrf0    = dat.mrf.do;
     dat.mrf.do = false;
     
-        [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);
-
     for it_reg=1:opt.reg.nit_init_aff
+        
         if opt.verbose.reg >= 3 
             % Show observed data, warped template and current responsibilities
             Z = get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt);
             show_seg(obs,Template,dat.gmm.prop,Z,dm_s,modality,chn_names,opt.model.nam_cls);
             clear Z
         end
+        
+        [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);
         
         if gain < opt.reg.init_aff_tol
             % Finished updating registration
@@ -140,23 +150,12 @@ end
     
     dat.mrf.do = do_mrf0;
 else
-    
-    %----------------------------------------------------------------------
-    % Otherwise use mutual information (for single-subject)
-    %----------------------------------------------------------------------
-    
-    if dm_s(3) > 1
-        % Only for 3D data
-        dat = maffreg_template2subject(dat,model,opt);
-    end
-    
+    % Affine matrix    
     E      = spm_dexpm(dat.reg.r,opt.reg.B);
-    Affine = model.template.nii.mat\E*mat_s;
+    Affine = mat_a\E*mat_s;
 
-    % Warp template to subject      
-    Template = warp_template(model,y,Affine);
-        
-    dat.gmm.cluster = get_cluster(obs,bf,dm_s,GaussPrior,miss,{Template,dat.gmm.prop,labels,dat.gmm.part},'sort_pars',false);
+    % Warp template to subject
+    Template = warp_template(model,y,Affine);  
 end
 
 if opt.do.mrf
@@ -211,15 +210,16 @@ for it_seg=1:opt.seg.niter
     do_prop = opt.prop.do   && (it_mod >= opt.start_it.do_prop || it_seg >= opt.start_it.do_prop);    
     do_mg   = opt.do.mg     && (it_mod >= opt.start_it.do_mg   || it_seg >= opt.start_it.do_mg);
     do_nl   = opt.reg.do_nl && (it_mod >= opt.reg.strt_nl      || it_seg >= opt.reg.strt_nl);
-        
+    
     if it_seg == 1 && do_mg && ~opt.template.do && ~isequal(GaussPrior{7},get_par('lkp',modality,opt))
         % Introduce multiple Gaussians per tissue
         [dat,GaussPrior] = introduce_lkp(dat,model,opt,GaussPrior);                        
     end
+    
     %----------------------------------------------------------------------
     % UPDATE BIAS FIELD
     %----------------------------------------------------------------------
-    
+            
     for it_bf=1:opt.bf.niter                 
         % Start with updating GMM parameters
         dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
@@ -230,8 +230,7 @@ for it_seg=1:opt.seg.niter
         if do_bf 
             % Update bias-field parameters    
             [dat,bf] = update_bf(dat,obs,bf,Template,dm_s,labels,miss,opt);             
-        end   
-    
+        end               
     
         if opt.verbose.gmm >= 3                        
             show_seg(obs,Template,dat.gmm.prop, ...
@@ -239,6 +238,42 @@ for it_seg=1:opt.seg.niter
                      dm_s,modality,chn_names,opt.model.nam_cls);            
         end                
     end   
+       
+    %----------------------------------------------------------------------
+    % UPDATE REGISTRATION
+    %----------------------------------------------------------------------
+        
+    if do_reg              
+        for it_reg=1:opt.reg.niter 
+        
+            if opt.reg.do_aff                
+                % Update affine parameters                                
+                [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);               
+            
+                if opt.verbose.gmm >= 3
+                    show_seg(obs,Template,dat.gmm.prop, ...
+                             get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
+                             dm_s,modality,chn_names,opt.model.nam_cls);        
+                end   
+            end
+            
+            if do_nl
+                % Update initial velocities                                                  
+                [dat,y,v,Template,Greens,gain,opt] = update_nonlin(dat,model,obs,Template,bf,labels,v,y,Affine,Greens,it_seg,it_mod,scl,miss,opt);                
+
+                if opt.verbose.gmm >= 3
+                    show_seg(obs,Template,dat.gmm.prop, ...
+                             get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
+                             dm_s,modality,chn_names,opt.model.nam_cls);        
+                end    
+            end        
+            
+            if gain < opt.reg.tol
+               % Finished updating registration
+               break;
+            end
+        end
+    end  
     
     %----------------------------------------------------------------------
     % UPDATE TISSUE PROPORTIONS
@@ -284,42 +319,6 @@ for it_seg=1:opt.seg.niter
             end
         end  
     end
-    
-    %----------------------------------------------------------------------
-    % UPDATE REGISTRATION
-    %----------------------------------------------------------------------
-        
-    if do_reg              
-        for it_reg=1:opt.reg.niter 
-        
-            if opt.reg.do_aff                
-                % Update affine parameters                                
-                [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);               
-            
-                if opt.verbose.gmm >= 3
-                    show_seg(obs,Template,dat.gmm.prop, ...
-                             get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
-                             dm_s,modality,chn_names,opt.model.nam_cls);        
-                end   
-            end
-
-            if do_nl
-                % Update initial velocities                                                  
-                [dat,y,v,Template,Greens,gain,opt] = update_nonlin(dat,model,obs,Template,bf,labels,v,y,Affine,Greens,it_seg,it_mod,scl,miss,opt);                
-
-                if opt.verbose.gmm >= 3
-                    show_seg(obs,Template,dat.gmm.prop, ...
-                             get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
-                             dm_s,modality,chn_names,opt.model.nam_cls);        
-                end    
-            end
-        
-           if gain < opt.reg.tol
-               % Finished updating registration
-               break;
-           end
-        end
-    end  
     
     %----------------------------------------------------------------------
     % CONVERGED?

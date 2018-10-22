@@ -8,7 +8,7 @@ if isfield(dat,'label') && opt.gmm.labels.use
         return
     else
         ix = opt.gmm.labels.cm(dat.population);
-    end
+    end        
     
     ix_bg  = max(ix) + 1;
     dm     = dat.label{1}.nii.dat.dim;
