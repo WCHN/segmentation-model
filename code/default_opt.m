@@ -117,7 +117,7 @@ if ~isfield(opt,'reg')
     opt.reg           = struct;
 end
 if ~isfield(opt.reg,'rparam0') 
-    opt.reg.rparam0   = 1e-1*[0 0.001 0.5 0.05 0.2];
+    opt.reg.rparam0      = def.rparam;
 end
 if ~isfield(opt.reg,'rparam') 
     opt.reg.rparam    = opt.reg.rparam0;
@@ -139,10 +139,10 @@ if ~isfield(opt.reg,'mc_aff')
     opt.reg.mc_aff    = false;
 end
 if ~isfield(opt.reg,'aff_type') 
-    opt.reg.aff_type  = 'affine'; % ['translation','rotation','rigid','similitude','affine']
+    opt.reg.aff_type     = 'similitude'; % ['translation','rotation','rigid','similitude','affine']
 end
 if ~isfield(opt.reg,'aff_reg') 
-    opt.reg.aff_reg   = 1e0;
+    opt.reg.aff_reg      = 0;
 end
 if ~isfield(opt.reg,'do_aff') 
     opt.reg.do_aff    = true;
@@ -370,7 +370,7 @@ if ~isfield(opt.do,'mg')
     opt.do.mg         = true;
 end
 if ~isfield(opt.do,'update_mrf')
-    opt.do.update_mrf = true;
+    opt.do.update_mrf = false;
 end
 if ~isfield(opt.do,'mrf')
     opt.do.mrf        = false;
@@ -486,11 +486,11 @@ def = spm_shoot_defaults;
 
 if opt.template.do
     sched.gmm = opt.gmm.niter;
-    sched.reg = def.sched(2:end);    
+    sched.reg = def.sched(1:end);    
     sched.eul = def.eul_its;
 else    
-    sched.gmm = opt.gmm.niter;    
-    sched.reg = (2.^fliplr(0:9));        
+    sched.gmm = opt.gmm.niter;       
+    sched.reg = [def.sched(1:9) 1];      
     sched.eul = 9;
 end
 
