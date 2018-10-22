@@ -122,9 +122,9 @@ end
     do_mrf0    = dat.mrf.do;
     dat.mrf.do = false;
     
-    for it_reg=1:12
         [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);
 
+    for it_reg=1:opt.reg.nit_init_aff
         if opt.verbose.reg >= 3 
             % Show observed data, warped template and current responsibilities
             Z = get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt);
@@ -132,7 +132,7 @@ end
             clear Z
         end
         
-        if gain < opt.reg.tol
+        if gain < opt.reg.init_aff_tol
             % Finished updating registration
             break;
         end

@@ -149,6 +149,11 @@ if ~isfield(opt.reg,'do_aff')
 end
 if ~isfield(opt.reg,'do_nl') 
     opt.reg.do_nl     = true;
+if ~isfield(opt.reg,'nit_init_aff') 
+    opt.reg.nit_init_aff = 26;
+end
+if ~isfield(opt.reg,'init_aff_tol') 
+    opt.reg.init_aff_tol = 1e-3;
 end
 
 % opt.template
