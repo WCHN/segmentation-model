@@ -205,18 +205,19 @@ for s=1:S0
     end
 
     % Collapse prior
-    lkp          = pr{7};
-    if ~(numel(pr{2}) == K)
+    [lkp0,mg] = get_par('lkp',dat{s}.modality{1}.name,opt);
+    lkp       = pr{7};
+    if ~isequal(lkp0,lkp)        
         [pr(1:4),mg] = spm_gmm_lib('extras','collapse_gmms',pr(1:4),lkp);
-    else
-        mg = ones(1,K);    
+        lkp          = 1:numel(mg); 
     end
 
     % LB part when having prior on V0
     lb_pr         = struct;                                        
     lb_pr.KL_qVpV = 0;
-    lb_pr.ElnDetV = zeros(1,max(lkp));
+    lb_pr.ElnDetV = zeros(1,numel(lkp));
     pr{6}         = lb_pr;
+    pr{7}         = lkp;
 
     model{s}.GaussPrior(dat{s}.population) = pr;   
    
@@ -226,7 +227,8 @@ for s=1:S0
     % Cluster proportions
     %--------------------------------------------------------------------------
     
-    dat{s}.gmm.part.mg = mg; 
+    dat{s}.gmm.part.mg  = mg; 
+    dat{s}.gmm.part.lkp = lkp;    
     
     %--------------------------------------------------------------------------
     % Tissue proportions

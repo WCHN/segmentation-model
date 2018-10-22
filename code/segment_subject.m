@@ -212,6 +212,10 @@ for it_seg=1:opt.seg.niter
     do_mg   = opt.do.mg     && (it_mod >= opt.start_it.do_mg   || it_seg >= opt.start_it.do_mg);
     do_nl   = opt.reg.do_nl && (it_mod >= opt.reg.strt_nl      || it_seg >= opt.reg.strt_nl);
         
+    if it_seg == 1 && do_mg && ~opt.template.do && ~isequal(GaussPrior{7},get_par('lkp',modality,opt))
+        % Introduce multiple Gaussians per tissue
+        [dat,GaussPrior] = introduce_lkp(dat,model,opt,GaussPrior);                        
+    end
     %----------------------------------------------------------------------
     % UPDATE BIAS FIELD
     %----------------------------------------------------------------------
@@ -228,10 +232,6 @@ for it_seg=1:opt.seg.niter
             [dat,bf] = update_bf(dat,obs,bf,Template,dm_s,labels,miss,opt);             
         end   
     
-        if it_seg == 1 && it_bf == 1 && do_mg && ~opt.template.do
-            % Introduce multiple Gaussians per tissue
-            [dat,GaussPrior] = introduce_lkp(dat,model,opt,GaussPrior);                        
-        end
     
         if opt.verbose.gmm >= 3                        
             show_seg(obs,Template,dat.gmm.prop, ...
