@@ -105,8 +105,13 @@ if ~opt.template.do
     dat.gmm.cluster{2}{2} = GaussPrior{4};
 end
 
-if ~opt.template.do && dm_s(3) > 1
+%--------------------------------------------------------------------------
+% Initial alignment of template
+%--------------------------------------------------------------------------
 
+if ~opt.template.do && dm_s(3) > 1
+    % Align template by mutual information registration
+    
     dat = maffreg_template2subject(dat,model,opt);
     
     E      = spm_dexpm(dat.reg.r,opt.reg.B);
@@ -114,11 +119,8 @@ if ~opt.template.do && dm_s(3) > 1
 
     % Warp template to subject      
     Template = warp_template(model,y,Affine);
-elseif it_mod == 1 && opt.reg.do_aff
-    
-    %----------------------------------------------------------------------
-    % Align the template by updating the affine parameters until convergence
-    %----------------------------------------------------------------------
+elseif it_mod == 1 && opt.reg.do_aff        
+    % Align the template by updating the affine parameters until convergence    
 
     % Affine matrix    
     E      = spm_dexpm(dat.reg.r,opt.reg.B);
@@ -150,12 +152,19 @@ elseif it_mod == 1 && opt.reg.do_aff
     
     dat.mrf.do = do_mrf0;
 else
+    % Template already aligned
+    
     % Affine matrix    
     E      = spm_dexpm(dat.reg.r,opt.reg.B);
     Affine = mat_a\E*mat_s;
 
     % Warp template to subject
     Template = warp_template(model,y,Affine);  
+end
+
+if ~strcmpi(modality,'ct') && ~opt.template.do
+    % Get posteriors using the aligned template
+    dat.gmm.cluster = get_cluster(obs,bf,dm_s,GaussPrior,miss,{Template,dat.gmm.prop,labels,dat.gmm.part},'sort_pars',false);
 end
 
 if opt.do.mrf
