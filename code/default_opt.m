@@ -5,12 +5,6 @@ if nargin < 1, opt = struct; end
 START_NL_TEMPL = 1;
 def            = spm_shoot_defaults;
 
-% holly
-if ~isfield(opt,'holly') 
-    opt.holly = struct;
-end
-holly = distribute_default(opt.holly);
-
 % opt
 if ~isfield(opt,'dir_output')
     opt.dir_output = './output/';
@@ -211,6 +205,19 @@ end
 if ~isfield(opt.template,'bg_class')
     opt.template.bg_class = 0;
 end
+
+% holly
+if ~isfield(opt,'holly') 
+    opt.holly          = struct;
+end
+if ~isfield(opt.holly,'mode') 
+    if opt.template.do
+        opt.holly.mode = 'parfor';
+    else
+        opt.holly.mode = 'for';
+    end
+end
+holly                  = distribute_default(opt.holly);
 
 % opt.seg
 if ~isfield(opt,'seg') 
