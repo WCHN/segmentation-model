@@ -98,6 +98,13 @@ if opt.verbose.gmm >= 3
 end
 
 if opt.template.do && it_mod == 1 && opt.reg.do_aff
+if ~opt.template.do
+    % Set initial posteriors to same values as GaussPrior
+    dat.gmm.cluster{1}{1} = GaussPrior{1};
+    dat.gmm.cluster{1}{2} = GaussPrior{2};
+    dat.gmm.cluster{2}{1} = GaussPrior{3};
+    dat.gmm.cluster{2}{2} = GaussPrior{4};
+end
     
     %----------------------------------------------------------------------
     % When learning from populations, for the first iteration, here we align 
