@@ -20,20 +20,26 @@ nfigs = 4 + P;
 nrows = floor(sqrt(nfigs));
 ncols = ceil(nfigs/nrows);             
 
+if it>2
+    x = 3;
+else
+    x = 1;
+end
+
 subplot(nrows,ncols,1)
-plot(model.lb(1:end))
+plot(model.lb(x:end))
 title(['Model (iter=' num2str(it) ')'])
 
 subplot(nrows,ncols,2)
-plot(model.template.objval.post(1:end))
+plot(model.template.objval.post(x:end))
 title('-ln(p(a|.))')
 
 subplot(nrows,ncols,3)
-plot(model.template.objval.likel(1:end))
+plot(model.template.objval.likel(x:end))
 title('-ln(p(.|a))')
 
 subplot(nrows,ncols,4)
-plot(model.template.objval.pr(1:end))
+plot(model.template.objval.pr(x:end))
 title('-ln(p(a))')
 
 if opt.gmm.GaussPrior.constrained
@@ -42,7 +48,7 @@ if opt.gmm.GaussPrior.constrained
         pr   = model.GaussPrior(name);
 
         subplot(nrows,ncols,4 + p)
-        plot(pr{6}.KL_qVpV(1:end))
+        plot(pr{6}.KL_qVpV(x:end))
         title(['KL(qV|pV) (' name ')'])
     end
 end
