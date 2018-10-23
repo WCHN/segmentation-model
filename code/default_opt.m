@@ -338,24 +338,36 @@ if ~isfield(opt.clean.mrf,'niter')
     opt.clean.mrf.niter    = 10;
 end
 
-% opt.clean.cnn_mrf
-if ~isfield(opt.clean,'cnn_mrf') 
-    opt.clean.cnn_mrf         = struct;
+% opt.clean.les
+if ~isfield(opt.clean,'les') 
+    opt.clean.les          = struct;
 end
-if ~isfield(opt.clean.cnn_mrf,'do')
-    opt.clean.cnn_mrf.do      = false;
+if ~isfield(opt.clean.les,'bwlabeln')
+    opt.clean.les.bwlabeln = false;
 end
-if ~isfield(opt.clean.cnn_mrf,'lkp')
-    opt.clean.cnn_mrf.lkp     = [];
+if ~isfield(opt.clean.les,'val')
+    opt.clean.les.val      = 0.1;
 end
-if ~isfield(opt.clean.cnn_mrf,'val')
-    opt.clean.cnn_mrf.val     = 0.1;
+if ~isfield(opt.clean.les,'class')
+    opt.clean.les.class    = 0;
 end
-if ~isfield(opt.clean.cnn_mrf,'pth_net')
-    opt.clean.cnn_mrf.pth_net = '';
+
+% opt.clean.les.cnn_mrf
+if ~isfield(opt.clean.les,'cnn_mrf') 
+    opt.clean.les.cnn_mrf         = struct;
 end
-if ~isfield(opt.clean.cnn_mrf,'les_cl')
-    opt.clean.cnn_mrf.les_cl  = 0;
+if ~isfield(opt.clean.les.cnn_mrf,'do')
+    opt.clean.les.cnn_mrf.do      = false;
+end
+if ~isfield(opt.clean.les.cnn_mrf,'lkp')
+    opt.clean.les.cnn_mrf.lkp     = [];
+end
+if ~isfield(opt.clean.les.cnn_mrf,'pth_net')
+    opt.clean.les.cnn_mrf.pth_net = '';
+end
+
+if (opt.clean.les.class <= 0 || opt.clean.les.class > opt.template.K) && (opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.do)
+    error('Value error: opt.clean.les.class')
 end
 
 % opt.start_it
