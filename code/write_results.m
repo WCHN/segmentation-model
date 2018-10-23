@@ -131,6 +131,11 @@ end
 [~,~,~,iy] = spm_shoot3d(v,prm_v,[opt.reg.int_args [2 2]],Greens);
 iy         = spm_warps('compose',iy,inv(Affine),single(spm_warps('identity',dm_a(1:3))));
 clear Greens v
+    if isempty(Greens)
+        [~,~,~,iy] = spm_shoot3d(v,prm_v,[opt.reg.int_args [2 2]]);
+    else
+        [~,~,~,iy] = spm_shoot3d(v,prm_v,[opt.reg.int_args [2 2]],Greens);
+    end
 
 if dm_s(3) == 1
     iy(:,:,:,3) = 1;
