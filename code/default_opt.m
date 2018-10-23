@@ -18,7 +18,7 @@ if ~isfield(opt.model,'tol')
     opt.model.tol     = 1e-4;
 end
 if ~isfield(opt.model,'niter') 
-    opt.model.niter   = 1;
+    opt.model.niter   = 30;
 end
 if ~isfield(opt.model,'nam_cls') 
     opt.model.nam_cls = {};
@@ -481,8 +481,7 @@ end
 
 % options when training
 if opt.template.do 
-    opt.seg.niter   = 1;
-    opt.model.niter = 30;                        
+    opt.seg.niter   = 1;              
     
     opt.reg.rparam0   = def.rparam;
     opt.reg.rparam    = opt.reg.rparam0;
