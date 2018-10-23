@@ -401,7 +401,7 @@ if isfield(dat.mrf,'oZ') && opt.template.do
     dat.mrf = rmfield(dat.mrf,'oZ');
 end
 
-if ~opt.template.do
+if ~opt.template.do || (opt.template.do && it_mod == opt.model.niter)
     %----------------------------------------------------------------------
     % Write resulting segmentations (etc) to disk
     %----------------------------------------------------------------------

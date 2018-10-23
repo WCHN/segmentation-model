@@ -235,9 +235,6 @@ end
 if ~isfield(opt.seg,'samp')
     opt.seg.samp           = 0;
 end
-if ~isfield(opt.seg,'write_mllabels')
-    opt.seg.write_mllabels = true;
-end
 if ~isfield(opt.seg,'bg')
     opt.seg.bg             = opt.template.K;
 end
@@ -409,6 +406,26 @@ if isempty(opt.ct.GaussPrior)
     opt.ct.GaussPrior = {MU,b,W,n,'CT',lb_prW,1:opt.template.K};   
 end
 
+% opt.write
+if ~isfield(opt,'write') 
+    opt.write     = struct;
+end
+if ~isfield(opt.write,'tc')
+    opt.write.tc  = true(opt.template.K,3); % [native-orig,native-final,template-final]
+end
+if ~isfield(opt.write,'bf')
+    opt.write.bf  = true(1,3); % [native-im,bf,template-im]
+end
+if ~isfield(opt.write,'df')
+    opt.write.df  = true;
+end
+if ~isfield(opt.write,'ml')
+    opt.write.ml  = false;
+end
+if ~isfield(opt.write,'les')
+    opt.write.les = true(1,2);
+end
+
 % opt.dict
 if ~isfield(opt,'dict') 
     opt.dict          = struct;
@@ -480,12 +497,11 @@ if opt.template.do
         opt.template.verbose = 2;        
     end
     opt.verbose.model    = 3; 
-    opt.bf.mc_bf_verbose = true;
-       
-    opt.dir_output = fullfile(opt.dir_output,'train');
-else
-    opt.dir_output = fullfile(opt.dir_output,'segment');
+    opt.bf.mc_bf_verbose = true;           
 end
+
+opt.dir_output_train = fullfile(opt.dir_output,'train');
+opt.dir_output_seg   = fullfile(opt.dir_output,'segment');
 %==========================================================================
 
 %==========================================================================
