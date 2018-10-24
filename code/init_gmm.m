@@ -22,36 +22,20 @@ opt.gmm.verbose = opt.gmm.hist.verbose_gmm;
 %--------------------------------------------------------------------------
 lb = -Inf(S0,niter);
 for iter=1:niter
-    
-	% Iterate over subjects
-	%----------------------------------------------------------------------       
+    		
 %     for s=1:S0
-    parfor s=1:S0
-        population = dat{s}.population;  
-        modality   = dat{s}.modality{1}.name;  
+    parfor s=1:S0 % Iterate over subjects
+        population = dat{s}.population;          
         
-%         if ~opt.gmm.labels.use || strcmpi(modality,'CT')                
-            % Fit VBGMM (update posteriors and mixing weights)
-            %------------------------------------------------------------------  
-            
-            pr                  = model.GaussPrior(population);
-            [dat{s},lb(s,iter)] = update_gmm_hist(obs{s},dat{s},bw{s},pr,opt);                                       
-%         end
+        % Fit VBGMM (update posteriors and mixing weights)
+        %------------------------------------------------------------------  
+        pr                  = model.GaussPrior(population);
+        [dat{s},lb(s,iter)] = update_gmm_hist(obs{s},dat{s},bw{s},pr,opt);                                       
     end    
     
 	% Update Gauss-Wishart hyper-parameters
 	%----------------------------------------------------------------------    
-    model = update_GaussPrior(dat,model,opt);
-    
-%     gain = spm_misc('get_gain',lb);         
-% 
-%     if verbose        
-%         fprintf('gmm_pr_from_hist | %4d | lb = %6.10f | gain = %6.10f\n',iter,lb(iter),gain);
-%     end    
-%     
-%     if iter > 1 && gain < 1e-2
-%         break
-%     end
+    model = update_GaussPrior(dat,model,opt);    
 end
 
 if opt.template.load_a_der            
