@@ -14,8 +14,7 @@ end
 Template  = zeros([dm_s(1:3) K],'single');
 for k=1:K
     % Warp template to subject
-    Template(:,:,:,k) = spm_diffeo('bsplins',single(nii.dat(:,:,:,k)),y,[2 2 2  0 0 0]);
-%     Template(:,:,:,k) = spm_diffeo('bsplins',Template0(:,:,:,k),y,[2 2 2  0 0 0]);
+    Template(:,:,:,k) = spm_diffeo('pull',single(nii.dat(:,:,:,k)),y);
 end        
 % clear Template0
 
