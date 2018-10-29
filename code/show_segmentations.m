@@ -15,7 +15,8 @@ populations = spm_json_manager('get_populations',dat);
 P           = numel(populations);
 S0          = numel(dat);
 
-nrows = min(S0,10); 
+mx_rows = 20;
+nrows   = min(S0,mx_rows); 
 
 cnt_plots = 1;
 for p=1:P
@@ -32,15 +33,16 @@ for p=1:P
             
             img = [];
             for k=1:size(Z,4)
-                img = [img Z(:,:,:,k)'];
+                img = [img Z(:,:,:,k)];
             end
 
-            subplot(nrows,1,cnt_plots);
-            imagesc(img,[0 1]); axis off xy image;
-               
+            subplot(1,nrows,cnt_plots);
+            imagesc(img',[0 1]); axis off xy;
+            title(population)   
+            
             cnt_plots = cnt_plots + 1;
                         
-            if cnt == floor(10/P) || cnt == S0
+            if cnt == floor(mx_rows/P) || cnt_plots >= mx_rows
                 break
             end
             
