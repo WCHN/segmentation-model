@@ -101,62 +101,15 @@ if ~isfield(opt.gmm.labels,'S')
     opt.gmm.labels.S   = 0.98;
 end
 
-% opt.sched
-if ~isfield(opt,'sched') 
-    opt.sched = get_sched(opt,START_NL_TEMPL);
-end
-
-% opt.reg
-if ~isfield(opt,'reg') 
-    opt.reg              = struct;
-end
-if ~isfield(opt.reg,'rparam0') 
-    opt.reg.rparam0      = def.rparam;
-end
-if ~isfield(opt.reg,'rparam') 
-    opt.reg.rparam       = opt.reg.rparam0;
-    opt.reg.rparam(3)    = opt.sched.reg(1)*opt.reg.rparam(3);
-end
-if ~isfield(opt.reg,'int_args') 
-    opt.reg.int_args     = opt.sched.eul(1);
-end
-if ~isfield(opt.reg,'niter') 
-    opt.reg.niter        = 3;
-end
-if ~isfield(opt.reg,'tol') 
-    opt.reg.tol          = 1e-4;
-end
-if ~isfield(opt.reg,'strt_nl') 
-    opt.reg.strt_nl      = START_NL_TEMPL;
-end
-if ~isfield(opt.reg,'mc_aff') 
-    opt.reg.mc_aff       = false;
-end
-if ~isfield(opt.reg,'aff_type') 
-    opt.reg.aff_type     = 'similitude'; % ['translation','rotation','rigid','similitude','affine']
-end
-if ~isfield(opt.reg,'aff_reg') 
-    opt.reg.aff_reg      = 0;
-end
-if ~isfield(opt.reg,'do_aff') 
-    opt.reg.do_aff       = true;
-end
-if ~isfield(opt.reg,'do_nl') 
-    opt.reg.do_nl        = true;
-end
-if ~isfield(opt.reg,'nit_init_aff') 
-    opt.reg.nit_init_aff = 26;
-end
-if ~isfield(opt.reg,'init_aff_tol') 
-    opt.reg.init_aff_tol = 1e-3;
-end
-
 % opt.template
 if ~isfield(opt,'template') 
     opt.template              = struct;
 end
 if ~isfield(opt.template,'do')
     opt.template.do           = false;
+end
+if ~isfield(opt,'sched') 
+    opt.sched = get_sched(opt,START_NL_TEMPL);
 end
 if ~isfield(opt.template,'pth_template')
     opt.template.pth_template = '';
@@ -204,6 +157,51 @@ if ~isfield(opt.template,'verbose')
 end
 if ~isfield(opt.template,'bg_class')
     opt.template.bg_class = 0;
+end
+
+% opt.reg
+if ~isfield(opt,'reg') 
+    opt.reg              = struct;
+end
+if ~isfield(opt.reg,'rparam0') 
+    opt.reg.rparam0      = def.rparam;
+end
+if ~isfield(opt.reg,'rparam') 
+    opt.reg.rparam       = opt.reg.rparam0;
+    opt.reg.rparam(3)    = opt.sched.reg(1)*opt.reg.rparam(3);
+end
+if ~isfield(opt.reg,'int_args') 
+    opt.reg.int_args     = opt.sched.eul(1);
+end
+if ~isfield(opt.reg,'niter') 
+    opt.reg.niter        = 3;
+end
+if ~isfield(opt.reg,'tol') 
+    opt.reg.tol          = 1e-4;
+end
+if ~isfield(opt.reg,'strt_nl') 
+    opt.reg.strt_nl      = START_NL_TEMPL;
+end
+if ~isfield(opt.reg,'mc_aff') 
+    opt.reg.mc_aff       = false;
+end
+if ~isfield(opt.reg,'aff_type') 
+    opt.reg.aff_type     = 'similitude'; % ['translation','rotation','rigid','similitude','affine']
+end
+if ~isfield(opt.reg,'aff_reg') 
+    opt.reg.aff_reg      = 0;
+end
+if ~isfield(opt.reg,'do_aff') 
+    opt.reg.do_aff       = true;
+end
+if ~isfield(opt.reg,'do_nl') 
+    opt.reg.do_nl        = true;
+end
+if ~isfield(opt.reg,'nit_init_aff') 
+    opt.reg.nit_init_aff = 26;
+end
+if ~isfield(opt.reg,'init_aff_tol') 
+    opt.reg.init_aff_tol = 1e-3;
 end
 
 % holly
