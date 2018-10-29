@@ -74,7 +74,7 @@ for it_mod=1:opt.model.niter
 
     % Save dat (for debugging)
     fname = fullfile(opt.dir_model,'dat.mat');
-    save(fname,'dat');
+    save(fname,'dat','-v7.3');
 
     % Some model parameters changes with iteration number
     opt = modify_opt(opt,it_mod);                      
