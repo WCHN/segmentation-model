@@ -6,12 +6,14 @@ p              = inputParser;
 p.FunctionName = 'get_obs';
 p.addRequired( 'dat',           @isstruct);
 p.addParameter('do_scl', false, @islogical);
+p.addParameter('mask',   true,  @islogical);
 p.addParameter('val',    1000,  @isnumeric);
 % p.addParameter('samp',   0,     @isnumeric);
 p.parse(varargin{:});
 dat            = p.Results.dat;
 do_scl         = p.Results.do_scl;
 val            = p.Results.val;
+do_msk         = p.Results.mask;
 % samp           = p.Results.samp;
 
 % Sanity-check image data
@@ -41,9 +43,11 @@ if isfield(dat.modality{1},'channel')
             obs1 = dat.modality{1}.channel{c}.nii.dat(:,:,:);            
 %         end
         
-        % Exclude locations where any of the images is not finite, or is zero. 
-        msk        = spm_misc('msk_modality',obs1,modality);
-        obs1(~msk) = NaN;
+        if do_msk
+            % Exclude locations where any of the images is not finite, or is zero. 
+            msk        = spm_misc('msk_modality',obs1,modality);
+            obs1(~msk) = NaN;
+        end
         
         if strcmpi(modality,'ct')
             scl(c) = 1;
@@ -72,10 +76,11 @@ else
         obs = dat.modality{1}.nii.dat(:,:,:);
 %     end
     
-    % Exclude locations where any of the images is not finite, or is zero. 
-    msk       = spm_misc('msk_modality',obs,modality); % figure(666);imshow3D(msk)
-    obs(~msk) = NaN;           
-        
+    if do_msk
+        % Exclude locations where any of the images is not finite, or is zero. 
+        msk       = spm_misc('msk_modality',obs,modality); % figure(666);imshow3D(msk)
+        obs(~msk) = NaN;           
+    end
     if strcmpi(modality,'ct')
         scl = 1;
     else

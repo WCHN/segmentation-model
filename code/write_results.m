@@ -92,6 +92,8 @@ end
 % Write images (bias-field corrected)
 %--------------------------------------------------------------------------
 
+obs = get_obs(dat,'mask',false); % Get not masked images
+
 if opt.write.bf(1)
     for c=1:C  
         Nii         = nifti;
