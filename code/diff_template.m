@@ -1,11 +1,10 @@
-function [gr,H,ll] = diff_template(a,Z,prop,bb,vs,opt)
+function [gr,H,ll] = diff_template(a,Z,prop,opt)
 
 % Parameters
-dm              = [size(Z),1,1,1];
-K               = dm(4);
-ln_prop         = reshape(prop,1,1,K);
-R               = null(ones(1,K));
-[~,xbb,ybb,zbb] = get_bb([],[],[],bb);
+dm      = [size(Z),1,1,1];
+K       = dm(4);
+ln_prop = reshape(prop,1,1,K);
+R       = null(ones(1,K));
 
 if opt.template.sym
     % Make all classes left-right symmetric
@@ -30,7 +29,7 @@ ll  = 0;
 for z=1:size(Z,3) % Loop over planes
 
     % Compute softmax for this plane
-    mu = double(reshape(softmax_template(a(xbb,ybb,zbb(z),:),R,ln_prop),[dm(1:2),K]));
+    mu = double(reshape(softmax_template(a(:,:,z,:),R,ln_prop),[dm(1:2),K]));
 %     tmp = sum(mu,3); sum(tmp(:) == 0)
 
     % log-likelihood

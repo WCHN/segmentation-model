@@ -32,33 +32,6 @@ end
 % Compute average orientation matrix and dimensions
 [M,d] = spm_misc('compute_avg_mat',mats,dms);
 
-% % Adjust template voxel size
-% if numel(vs)==1
-%     vs = vs*ones(1,3);
-% end
-% 
-% c = [1    1    1    1
-%      1    1    d(3) 1
-%      1    d(2) 1    1
-%      1    d(2) d(3) 1
-%      d(1) 1    1    1
-%      d(1) 1    d(3) 1
-%      d(1) d(2) 1    1
-%      d(1) d(2) d(3) 1]';
-% 
-% tc = M(1:3,1:4)*c;
-% if spm_flip_analyze_images, tc(1,:) = -tc(1,:); end
-% 
-% mx = round(max(tc,[],2)');
-% mn = round(min(tc,[],2)');
-% 
-% M = spm_matrix(mn)*diag([vs 1])*spm_matrix(-[1 1 1]);
-% 
-% d = ceil((M\[mx 1]')');
-% d = d(1:3);
-% 
-% if spm_flip_analyze_images, M = diag([-1 1 1 1])*M; end          
-
 % Write template to disk
 %--------------------------------------------------------------------------
 pth_template  = fullfile(dir_model,'template.nii');   
@@ -78,8 +51,6 @@ matlabbatch{1}.spm.util.cat.name  = pth_template;
 matlabbatch{1}.spm.util.cat.dtype = 0;
 spm_jobman('run',matlabbatch);
 
-% delete(fullfile(pth,[nam '.mat']));
-
 for k=1:K
     delete(vols{k});
 end
@@ -88,8 +59,10 @@ end
 model              = struct;
 model.template.nii = nifti(pth_template);
 
-% Crop template
-model = resize_template(model,opt);
+if opt.template.resize
+    % Crop template
+    model = resize_template(model,opt);
+end
 
 % Get values to be used for FOV voxels when warping 
 model = init_template_bg(model,opt);

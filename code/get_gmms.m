@@ -6,7 +6,9 @@ tiny    = get_par('tiny');
         
 % Set posteriors
 %--------------------------------------------------------------------------
-for s=1:S0    
+parfor s=1:S0    
+% for s=1:S0
+    
     modality    = dat{s}.modality{1}.name;   
     dm          = obs_info(dat{s}); 
     lkp         = get_par('lkp',modality,opt);
@@ -40,12 +42,9 @@ for s=1:S0
         % Initilisation of GMMs when data is MRI
         %------------------------------------------------------------------
         
-        X = get_obs(dat{s},'do_scl',true);    
-        C = size(X,2);
-        
-        miss.C  = spm_gmm_lib('obs2code',X);
-        miss.L  = unique(miss.C);
-        miss.nL = numel(miss.L);
+        X    = get_obs(dat{s},'do_scl',true);    
+        C    = size(X,2);        
+        miss = get_par('missing_struct',X);
 
         if opt.gmm.labels.use && isfield(dat{s},'label') && opt.gmm.labels.cm.isKey(dat{s}.population)                        
             
@@ -71,7 +70,7 @@ for s=1:S0
             X1     = X(msk_nl,:);
             
             Z_nl = resp_from_kmeans(X1,K_nl - sum(ix_tiny),'uniform');                        
-            clear X1
+            X1   = [];
             
             % Get resps for labelled voxels
             cnt = 1;
@@ -88,7 +87,8 @@ for s=1:S0
                     Z(:,k)      = labels{1}==ix(k);
                 end
             end
-            clear Z_nl msk_nl                                                
+            Z_nl   = []; 
+            msk_nl = [];
         else                      
             %--------------------------------------------------------------
             % No labels provided
@@ -109,8 +109,8 @@ for s=1:S0
                 nZ(:,k) = Z(:,cnt);
                 cnt     = cnt + 1;
             end
-            Z = nZ;
-            clear nZ
+            Z  = nZ;
+            nZ = [];
         end              
         
         % Add tiny value where resps are zero

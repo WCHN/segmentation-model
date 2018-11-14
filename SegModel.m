@@ -70,11 +70,7 @@ for it_mod=1:opt.model.niter
     [dat,model] = introduce_lkp(dat,model,opt,it_mod);
 
     % Do segmentation
-    [holly,dat] = distribute(holly,'segment_subject','inplace',dat,model,opt,it_mod);   
-
-    % Save dat (for debugging)
-    fname = fullfile(opt.dir_model,'dat.mat');
-    save(fname,'dat','-v7.3');
+    [holly,dat] = distribute(holly,'segment_subject','inplace',dat,model,opt,it_mod);      
 
     % Some model parameters changes with iteration number
     opt = modify_opt(opt,it_mod);                      
@@ -106,6 +102,12 @@ for it_mod=1:opt.model.niter
     % Some verbose
     if opt.verbose.model >= 2, plot_model_lb(dat,model,it_mod,opt); end
     if opt.verbose.model >= 3, show_segmentations(dat); end
+    
+    % Save some variables
+    fname = fullfile(opt.dir_model,'dat.mat');
+    save(fname,'dat','-v7.3');    
+    fname = fullfile(opt.dir_model,'opt.mat');
+    save(fname,'opt','-v7.3');
 end
 
 if opt.model.clean_up
