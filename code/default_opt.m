@@ -143,9 +143,6 @@ end
 if ~isfield(opt.template,'R')
     opt.template.R            = null(ones(1,opt.template.K));
 end
-if ~isfield(opt.template,'rem_neck')
-    opt.template.rem_neck     = true;
-end
 if ~isfield(opt.template,'sym')
     opt.template.sym          = true;
 end
@@ -157,6 +154,8 @@ if ~isfield(opt.template,'verbose')
 end
 if ~isfield(opt.template,'bg_class')
     opt.template.bg_class = 0;
+if ~isfield(opt.template,'keep_neck')
+    opt.template.keep_neck    = false;
 end
 
 % opt.reg
