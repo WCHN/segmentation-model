@@ -32,10 +32,19 @@ msk = b > 0;
 % 'Inverse' bacground mask to get brain mask
 msk = ~msk;
 
-% Find largest connected component and fill holes
-L   = bwlabeln(msk);
-msk = L == 1;
+% Fill holes
 msk = imfill(msk,'holes');
+
+% Find largest connected component
+L   = bwlabeln(msk);
+nL  = unique(L);
+vls = zeros([1 numel(nL)]);
+for i=1:numel(nL)
+    vls(i) = sum(sum(sum(L == nL(i))));
+end
+[~,ix] = sort(vls);
+ix     = (ix(end - 1) - 1);
+msk    = L == ix;
 
 % Warp brain mask to subject
 msk                 = spm_diffeo('bsplins',single(msk),y,[0 0 0  0 0 0]);
