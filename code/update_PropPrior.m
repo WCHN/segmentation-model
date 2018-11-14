@@ -24,6 +24,7 @@ meanLogX = meanLogX./S0;
 alpha    = double(alpha(:));
 logalpha = log(alpha);
 meanLogX = double(meanLogX(:));
+K        = numel(alpha);
 
 E  = NaN;
 for gn=1:100000
@@ -41,10 +42,8 @@ for gn=1:100000
     end
     
     % Compute grad/hess
-    g = alpha .* ( psi(alpha) - psi(sum(alpha)) - meanLogX);
-    H = - ( alpha .* psi(sum(alpha)) + alpha.^2 .* psi(1, sum(alpha)) );
-    H = H * H';
-    H = H + diag(alpha .* psi(alpha) + alpha.^2 .* psi(1, alpha));
+    g = alpha .* ( psi(alpha) - psi(sum(alpha)) - meanLogX );
+    H = (alpha * alpha') .* (diag(psi(1,alpha)) - psi(1,sum(alpha)) * ones(K));
     H = spm_matcomp('LoadDiag', H);
     
     Update = H\g;
