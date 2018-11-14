@@ -98,7 +98,7 @@ if ~isfield(opt.gmm.labels,'use')
     opt.gmm.labels.use = false;
 end
 if ~isfield(opt.gmm.labels,'S') 
-    opt.gmm.labels.S   = 0.98;
+    opt.gmm.labels.S   = 0.9999;
 end
 
 % opt.template
@@ -134,8 +134,8 @@ end
 if ~isfield(opt.template,'reg')
     opt.template.reg          = opt.sched.a(1)*opt.template.reg0;
 end
-if ~isfield(opt.template,'crop')
-    opt.template.crop         = false;
+if ~isfield(opt.template,'shrink')
+    opt.template.shrink       = false;
 end
 if ~isfield(opt.template,'load_a_der')
     opt.template.load_a_der   = true;
@@ -144,7 +144,7 @@ if ~isfield(opt.template,'R')
     opt.template.R            = null(ones(1,opt.template.K));
 end
 if ~isfield(opt.template,'sym')
-    opt.template.sym          = true;
+    opt.template.sym          = false;
 end
 if ~isfield(opt.template,'niter')
     opt.template.niter        = 16;
@@ -153,7 +153,11 @@ if ~isfield(opt.template,'verbose')
     opt.template.verbose      = 0; % [0,1,2]
 end
 if ~isfield(opt.template,'bg_class')
-    opt.template.bg_class = 0;
+    opt.template.bg_class     = 0;
+end
+if ~isfield(opt.template,'resize')
+    opt.template.resize       = true;
+end
 if ~isfield(opt.template,'keep_neck')
     opt.template.keep_neck    = false;
 end
@@ -244,7 +248,7 @@ if ~isfield(opt.seg.mrf,'ml')
     opt.seg.mrf.ml       = true;
 end
 if ~isfield(opt.seg.mrf,'val_diag')
-    opt.seg.mrf.val_diag = 0.5;
+    opt.seg.mrf.val_diag = 0.8;
 end
 if ~isfield(opt.seg.mrf,'alpha')
     opt.seg.mrf.alpha    = 1e5;
@@ -505,7 +509,10 @@ if opt.template.do
         opt.template.verbose = 2;        
     end
     opt.verbose.model    = 3; 
-    opt.bf.mc_bf_verbose = true;           
+    opt.bf.mc_bf_verbose = true;     
+    
+    opt.start_it.do_prop    = 2;
+    opt.start_it.do_upd_mrf = 2;
 end
 
 opt.dir_output_train = fullfile(opt.dir_output,'train');

@@ -97,7 +97,7 @@ parfor s=1:S0
             
             sort_pars = true;
             
-            Z = resp_from_kmeans(X,K - sum(ix_tiny),'plus');
+            Z = resp_from_kmeans(X,K - sum(ix_tiny),'uniform');
                         
             nZ  = zeros([size(X,1) K],'single');
             cnt = 1;
@@ -225,7 +225,7 @@ end
 %==========================================================================   
 function Z = resp_from_kmeans(X,K,start_method)
 % Get initial labels using kmeans
-L = spm_kmeans(X,K,'Distance','cityblock','Start',start_method);
+L = spm_kmeans(X,K,'Distance','sqeuclidian','Start',start_method);
 
 % Compute responsibilities from kmeans labels
 Z = zeros([numel(L) K],'single');
