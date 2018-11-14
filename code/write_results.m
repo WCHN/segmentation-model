@@ -92,6 +92,8 @@ end
 % Write images (bias-field corrected)
 %--------------------------------------------------------------------------
 
+obs = get_obs(dat,'mask',false); % Get not masked images
+
 if opt.write.bf(1)
     for c=1:C  
         Nii         = nifti;
@@ -177,7 +179,7 @@ clear bf obs x iy
 if opt.clean.eyeballs
     % Ad-hoc clean-up to remove crap outside of brain from brain classes           
     Z = clean_eyeballs(Z,model,y,opt);    
-    % k=4;d=ceil(dm_s(3)/2);figure(666);subplot(121);imagesc(squeeze(Z(:,:,d,k)));subplot(122);imagesc(squeeze(Z1(:,:,d,k)))
+    % k=1;d=ceil(dm_s(3)/2);figure(666);subplot(121);imagesc(squeeze(Z(:,:,d,k)));subplot(122);imagesc(squeeze(Z1(:,:,d,k)))
 end
 
 if opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.do

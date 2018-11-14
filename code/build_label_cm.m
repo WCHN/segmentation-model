@@ -22,25 +22,42 @@ for s=1:S0
         error('numel(cm_p)~=K')
     end
     
-    % Build confusion matrix (max(ix) x K)    
-    ix_bg = max(ix) + 1;
-    CM    = zeros(ix_bg,K);    
+    %----------------------------------------------------------------------
+    % Build confusion matrix 
+    %----------------------------------------------------------------------
     
-    % Background labels (assumed to always have the label 0)
-    ix_k            = ix == 0;
-    CM(ix_bg, ix_k) = rater_sens/nnz(ix_k);
-    CM(ix_bg,~ix_k) = (1 - rater_sens)/nnz(~ix_k);
+    ix_ul = max(ix) + 1;    % Unlabelled voxels (0) are assumed to have value: num(labels) + 1
+    CM    = zeros(ix_ul,K); % Confusion matrix is of size: (num(labels) + 1) x num(tissue)
     
-    % Other labels
+    % For the unlabelled voxels, we assume uniform probability
+    ix_k            = ix == 0; 
+    CM(ix_ul, ix_k) = rater_sens/nnz(ix_k); 
+    CM(ix_ul,~ix_k) = (1 - rater_sens)/nnz(~ix_k);
+    
+%     CM(ix_ul, :) = 1; 
+%     prob_bg         = 0.8;
+%     ix_k            = ix == 0;
+%     CM(ix_bg, ix_k) = rater_sens/nnz(ix_k);
+%     CM(ix_bg,~ix_k) = (1 - rater_sens)/nnz(~ix_k);
+%     CM(ix_bg, ix_k) = prob_bg;
+%     CM(ix_bg,~ix_k) = 1 - prob_bg;    
+
+    % For the labelled voxels, we define probabilities from a user-given
+    % rater sensitivity
     for k=ix
-        if k == 0, continue; end
+        if k == 0
+            % Skip unlabelled
+            continue; 
+        end
         
         ix_k        = ix == k;
         CM(k, ix_k) = rater_sens/nnz(ix_k);
         CM(k,~ix_k) = (1 - rater_sens)/nnz(~ix_k);
     end
 
+    % Normalise confusion matrix
     CM = bsxfun(@rdivide,CM,sum(CM,1));
+%     CM = bsxfun(@rdivide,CM,sum(CM,2));
     
 %     % Adjust CM for when using multiple Gaussians per tissue
 %     modality = dat{s}.modality{1}.name;

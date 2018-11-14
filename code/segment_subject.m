@@ -377,16 +377,17 @@ if    opt.template.do && opt.template.load_a_der
     clear Template
 
     % Push responsibilities from subject space to template space
-    y                   = spm_warps('transform',Affine,y);
+    y = spm_warps('transform',Affine,y);
     if dm_s(3) == 1
         y(:,:,:,3) = 1;
     end
-    [Z,dat.template.bb] = push_responsibilities(Z,y,dm_a(1:3),mat_a,dat.template.bb);                      
+    
+    Z = push_responsibilities(Z,y,dm_a(1:3));                      
     clear y
     
     % Compute template gradients and Hessian
     a               = rotate_template(model.template.nii,opt);
-    [gr,H,dll]      = diff_template(a,Z,dat.gmm.prop,dat.template.bb,vs_s,opt);         
+    [gr,H,dll]      = diff_template(a,Z,dat.gmm.prop,opt);         
     dat.template.ll = dll;                        
     clear a Z
     

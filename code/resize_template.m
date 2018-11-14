@@ -8,22 +8,18 @@ function model = resize_template(model,opt)
 
 % Read input
 pth_template = model.template.nii.dat.fname;
-rem_neck     = opt.template.rem_neck;
+keep_neck    = opt.template.keep_neck;
 
 pth_spm_tpm = fullfile(spm('dir'),'tpm','TPM.nii,');
 
-V = spm_vol(pth_spm_tpm);
-V = V(1);
+V_ref = spm_vol(pth_spm_tpm);
+bb    = world_bb(V_ref(1));
 
-dm  = V.dim;
-mat = V.mat;
-% dm(3) = 1;
-
-bb = world_bb(V);
-% bb  = world_bb_par(dm,mat);
-
-V  = spm_vol(pth_template);
-dm = V(1).dim;
+V_in = spm_vol(pth_template);
+dm   = V_in(1).dim;
+if keep_neck
+    bb(1,3) = NaN;
+end
 if dm(3) == 1
     bb(:,3) = 0;
 end
@@ -32,45 +28,6 @@ resize_img(pth_template,opt.template.vs,bb);
  
 % Update template in model
 model.template.nii = nifti(pth_template);
-
-% % Parameters
-% V   = spm_vol(pth_template);
-% K   = numel(V);
-% mat = V(1).mat;
-% vs  = spm_misc('vxsize',mat);
-% 
-% dm   = ceil(vs.*V(1).dim);
-% dm0  = ceil(1.5*[131 155 121]); % Size of SPM template
-% is3d = dm(3) > 1;
-% 
-% if ~rem_neck
-%     dm0(3) = dm(3);
-% end
-% 
-% d        = dm - dm0;
-% d(d < 2) = 0;
-% d        = floor(d./2);        
-% 
-% x0 = d(1);
-% x1 = dm(1) - d(1);
-% y0 = d(2);
-% y1 = dm(2) - d(1);
-% if is3d
-%     z0 = d(3);    
-%     z1 = dm(3) - d(3);
-% else
-%     z0 = 1;
-%     z1 = 1;
-% end
-% 
-% bb = [x0 y0 z0; x1 y1 z1];
-% 
-% for k=1:K
-%     spm_impreproc('subvol',V(k),bb,'');        
-% end
-% 
-% % Update template in model
-% model.template.nii = nifti(pth_template);
 %==========================================================================
 
 %==========================================================================
@@ -184,7 +141,7 @@ for V=vols'
     spm_progress_bar('Init',imgdim(3),'reslicing...','planes completed');
     for i = 1:imgdim(3)
         M = inv(spm_matrix([0 0 -i])*inv(VO.mat)*V.mat);
-        img = spm_slice_vol(V, M, imgdim(1:2), 1); % (linear interp)
+        img = spm_slice_vol(V, M, imgdim(1:2), 0);
         if ismask
             img = round(img);
         end

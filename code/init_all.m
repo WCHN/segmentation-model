@@ -13,7 +13,7 @@ if opt.template.do
     % Init template from histogram representations of input images
     model       = init_uniform_template(dat,opt); % Create initial uniform template     
     [dat,model] = init_gmm(dat,model,opt);
-    model       = update_template(dat,model,opt);
+    model       = update_template(dat,model,opt,true);
     show_PropPrior(dat,model,opt);
 else  
     % When segmenting a single subject

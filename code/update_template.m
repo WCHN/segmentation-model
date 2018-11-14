@@ -1,9 +1,14 @@
-function [model,mu,a] = update_template(dat,model,opt)
+function [model,mu,a] = update_template(dat,model,opt,is_init)
+
+if nargin < 4, is_init = false; end
+if is_init
+    opt.template.niter = 1;
+end
 
 % Options
 reg        = opt.template.reg;
 verbose    = opt.template.verbose;
-crop       = opt.template.crop;
+shrink     = opt.template.shrink;
 B          = opt.reg.B;
 prm_reg    = opt.reg.rparam;
 int_args   = opt.reg.int_args;
@@ -28,7 +33,7 @@ a = rotate_template(nii_a,opt);
 % Compute/load pushed responsibilities then update template using Gauss-Newton
 %--------------------------------------------------------------------------
 
-if load_a_der
+if load_a_der && ~is_init
     % Template derivatives are loaded from disk
     %----------------------------------------------------------------------
                     
@@ -36,18 +41,14 @@ if load_a_der
     H  = zeros([dm(1:3) round(((K-1)*K)/2)],'single'); % 2nd derivatives
     gr = zeros([dm(1:3),K-1],'single');                % 1st derivatives
     ll = 0;
-    BB = zeros(3,2,S0); % For saving all bounding-boxes
     for s=1:S0
-        [~,xbb,ybb,zbb] = get_bb([],[],[],dat{s}.template.bb);   
-        BB(:,:,s)       = dat{s}.template.bb;
-        
         % Add up gradients
-        nii               = nifti(dat{s}.template.pth_gr);
-        gr(xbb,ybb,zbb,:) = gr(xbb,ybb,zbb,:) + nii.dat(:,:,:,:);
+        nii = nifti(dat{s}.template.pth_gr);
+        gr  = gr + nii.dat(:,:,:,:);
         
         % Add up Hessians
-        nii              = nifti(dat{s}.template.pth_H);
-        H(xbb,ybb,zbb,:) = H(xbb,ybb,zbb,:) + nii.dat(:,:,:,:);
+        nii = nifti(dat{s}.template.pth_H);
+        H   = H + nii.dat(:,:,:,:);
         
         % Add up ll:s
         ll = ll + dat{s}.template.ll;
@@ -64,12 +65,11 @@ else
     % iterating the Gauss-Newton solver, handy for debugging.
     %----------------------------------------------------------------------
     
-    BB = zeros(3,2,S0); % For saving all bounding-boxes
     for iter=1:opt.template.niter
         H  = zeros([dm(1:3) round(((K-1)*K)/2)],'single'); % 2nd derivatives
         gr = zeros([dm(1:3),K-1],'single');                % 1st derivatives    
         ll = 0;
-        for s=1:S0 
+        parfor s=1:S0 
             
             % Subject parameters
             [obs,dm_s,mat_s,vs_s,scl] = get_obs(dat{s});                
@@ -113,19 +113,18 @@ else
             % figure; imshow3D(squeeze(reshape(Z,[dm_s 9])))                                          
 
             % Push responsibilities in subject space to template space
-            [Z,BB(:,:,s)] = push_responsibilities(Z,y,dm_a(1:3),mat_a,BB(:,:,s)); 
+            Z = push_responsibilities(Z,y,dm_a(1:3)); 
             y = []; 
             % figure; imshow3D(squeeze(Z))
 
             % Compute gradients and Hessian
-            [gr_s,H_s,ll_s] = diff_template(a,Z,prop,BB(:,:,s),vs_s,opt); 
+            [gr_s,H_s,ll_s] = diff_template(a,Z,prop,opt); 
             Z = [];            
 
-            % Add to global derivatives using bounding box
-            [~,xbb,ybb,zbb]   = get_bb([],[],[],BB(:,:,s));            
-            gr(xbb,ybb,zbb,:) = gr(xbb,ybb,zbb,:) + gr_s;
-            H(xbb,ybb,zbb,:)  = H(xbb,ybb,zbb,:)  + H_s;            
-            ll                = ll                + ll_s;                        
+            % Add to global derivatives using bounding box         
+            gr = gr + gr_s;
+            H  = H  + H_s;            
+            ll = ll + ll_s;                        
         end    
 
         % Do Gauss-Newton step to update template
@@ -159,7 +158,7 @@ model.template.objval.pr(end + 1)    = -ll1;
 % Update the NIfTI that stores the template
 nii_a.dat(:,:,:,:) = a;
 
-if crop
+if shrink
     % Use all the computed bounding-boxes from the push operations to
     % shrink the template.
     nii_a = spm_impreproc('mult_bb_crop',nii_a,BB);

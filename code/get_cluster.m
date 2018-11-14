@@ -131,8 +131,8 @@ for i=1:32
 end
 
 if sort_pars
-    % Sort GMM parameters
-    [~,ix] = sort(sum(sqrt(MU.^2),1));
+    % Sort GMM parameters    
+    [~,ix] = sort(vecnorm(MU,2,1));
     
     MU = MU(:,ix);
     b  = b(ix);
