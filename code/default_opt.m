@@ -189,10 +189,10 @@ if ~isfield(opt.reg,'mc_aff')
     opt.reg.mc_aff       = false;
 end
 if ~isfield(opt.reg,'aff_type') 
-    opt.reg.aff_type     = 'similitude'; % ['translation','rotation','rigid','similitude','affine']
+    opt.reg.aff_type     = 'affine'; % ['translation','rotation','rigid','similitude','affine']
 end
 if ~isfield(opt.reg,'aff_reg') 
-    opt.reg.aff_reg      = 0;
+    opt.reg.aff_reg      = 1;
 end
 if ~isfield(opt.reg,'do_aff') 
     opt.reg.do_aff       = true;
@@ -513,6 +513,7 @@ if opt.template.do
     
     opt.start_it.do_prop    = 2;
     opt.start_it.do_upd_mrf = 2;
+    opt.start_it.do_mg      = 3;
 end
 
 opt.dir_output_train = fullfile(opt.dir_output,'train');
@@ -525,7 +526,7 @@ def = spm_shoot_defaults;
 
 if opt.template.do
     sched.gmm = opt.gmm.niter;
-    sched.reg = def.sched(1:end);    
+    sched.reg = [128 64 def.sched(1:end)];    
     sched.eul = def.eul_its;
 else    
     sched.gmm = opt.gmm.niter;       
