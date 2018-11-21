@@ -349,13 +349,21 @@ end
 clear Greens
 
 if opt.verbose.model >= 3
-   % Write 2D versions of responsibilities to disk (for verbose) 
+   % Write 2D versions to disk (for verbose) of..
    ix_z = floor(dm_s(3)/2) + 1;
-   Z    = get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt,'z',ix_z);
    
+   % ..responsibilities
+   Z             = get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt,'z',ix_z);   
    dat.pth.seg2d = fullfile(opt.dir_seg2d,['seg2d_' nam '.nii']);
    spm_misc('create_nii',dat.pth.seg2d,Z,mat_s,[spm_type('float32') spm_platform('bigend')],'seg2d');        
    clear Z
+   
+   % ..of image (only one channel)
+   im           = reshape(obs(:,1),dm_s(1:3));
+   im           = im(:,:,ix_z);
+   dat.pth.im2d = fullfile(opt.dir_seg2d,['im2d_' nam '.nii']);
+   spm_misc('create_nii',dat.pth.im2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'im2d');        
+   clear im
 end
 
 if do_nl
