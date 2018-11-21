@@ -1,7 +1,7 @@
 function dat = meancorrect_bf(dat,GaussPrior,opt,it_mod)
 if nargin < 4, it_mod = 0; end
 
-if opt.bf.mc_bf
+if opt.bf.mc_bf && opt.bf.do
     % Parameters
     Verbose     = opt.bf.mc_bf_verbose;
     populations = spm_json_manager('get_populations',dat);
