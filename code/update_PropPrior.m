@@ -14,6 +14,7 @@ end
 
 S0    = numel(dat);
 alpha = model.PropPrior.alpha;
+K     = numel(alpha);
 
 meanLogX = 0;
 for s=1:S0
@@ -41,43 +42,14 @@ for gn=1:100000
     end
     
     % Compute grad/hess
-    g = alpha .* ( psi(alpha) - psi(sum(alpha)) - meanLogX);
-    H = - ( alpha .* psi(sum(alpha)) + alpha.^2 .* psi(1, sum(alpha)) );
-    H = H * H';
-    H = H + diag(alpha .* psi(alpha) + alpha.^2 .* psi(1, alpha));
+    g = alpha .* ( psi(alpha) - psi(sum(alpha)) - meanLogX );
+    H = (alpha * alpha') .* (diag(psi(1,alpha)) - psi(1,sum(alpha)) * ones(K));
+    
     H = spm_matcomp('LoadDiag', H);
     
-    Update = H\g;
-    
-    % ---------------------------------------------------------------------
-    % Line search    
-    ok         = false;
-    oE         = E;
-    armijo     = 1;
-    ologalpha  = logalpha;    
-    for line_search=1:12
-        logalpha = ologalpha - armijo*Update;        
-        
-        alpha = exp(logalpha);
-        
-        E = sum(gammaln(alpha)) ...
-            - gammaln(sum(alpha)) ...
-            - sum((alpha - 1).*meanLogX);
-     
-        if E <= oE
-            ok = true;
-            break;
-        else
-            armijo = 0.5*armijo;
-        end        
-    end
-    
-    if ~ok
-        E        = oE;
-        logalpha = ologalpha;
-        alpha    = exp(logalpha);
-        break
-    end
+    % update
+    logalpha = logalpha - H\g;
+    alpha    = exp(logalpha);
 end
 
 model.PropPrior.alpha = alpha;
