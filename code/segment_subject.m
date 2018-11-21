@@ -249,47 +249,11 @@ for it_seg=1:opt.seg.niter
     end   
        
     %----------------------------------------------------------------------
-    % UPDATE REGISTRATION
-    %----------------------------------------------------------------------
-        
-    if do_reg              
-        for it_reg=1:opt.reg.niter 
-        
-            if opt.reg.do_aff                
-                % Update affine parameters                                
-                [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);               
-            
-                if opt.verbose.gmm >= 3
-                    show_seg(obs,Template,dat.gmm.prop, ...
-                             get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
-                             dm_s,modality,chn_names,opt.model.nam_cls);        
-                end   
-            end
-            
-            if do_nl
-                % Update initial velocities                                                  
-                [dat,y,v,Template,Greens,gain,opt] = update_nonlin(dat,model,obs,Template,bf,labels,v,y,Affine,Greens,it_seg,it_mod,scl,miss,opt);                
-
-                if opt.verbose.gmm >= 3
-                    show_seg(obs,Template,dat.gmm.prop, ...
-                             get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
-                             dm_s,modality,chn_names,opt.model.nam_cls);        
-                end    
-            end        
-            
-            if gain < opt.reg.tol
-               % Finished updating registration
-               break;
-            end
-        end
-    end  
-    
-    %----------------------------------------------------------------------
     % UPDATE TISSUE PROPORTIONS
     %----------------------------------------------------------------------
     
     if do_prop         
-        for it_bf=1:opt.bf.niter                 
+        for it_bf=1:2                
             % Start with updating GMM parameters
             dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
 
@@ -327,6 +291,46 @@ for it_seg=1:opt.seg.niter
                          dm_s,modality,chn_names,opt.model.nam_cls);            
             end
         end  
+    end
+    
+    %----------------------------------------------------------------------
+    % UPDATE REGISTRATION
+    %----------------------------------------------------------------------
+        
+    if do_reg              
+        for it_reg=1:opt.reg.niter 
+        
+            if opt.reg.do_aff                
+                % Update affine parameters                                
+                [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);               
+            
+                if opt.verbose.gmm >= 3
+                    show_seg(obs,Template,dat.gmm.prop, ...
+                             get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
+                             dm_s,modality,chn_names,opt.model.nam_cls);        
+                end   
+            end
+            
+            if do_nl
+                % Update initial velocities                                                  
+                [dat,y,v,Template,Greens,gain,opt] = update_nonlin(dat,model,obs,Template,bf,labels,v,y,Affine,Greens,it_seg,it_mod,scl,miss,opt);                
+
+                if opt.verbose.gmm >= 3
+                    show_seg(obs,Template,dat.gmm.prop, ...
+                             get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
+                             dm_s,modality,chn_names,opt.model.nam_cls);        
+                end    
+            end        
+            
+            if gain < opt.reg.tol && it_reg > 1
+               % Finished updating registration
+               break;
+            end
+        end
+    end  
+        
+    if opt.template.do
+        dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);
     end
     
     %----------------------------------------------------------------------
