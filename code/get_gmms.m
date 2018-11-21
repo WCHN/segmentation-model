@@ -95,7 +95,7 @@ parfor s=1:S0
             % Get responsibilities from kmeans labels
             %--------------------------------------------------------------
             
-            sort_pars = true;
+            sort_pars = false;
             
             Z = resp_from_kmeans(X,K - sum(ix_tiny),'uniform');
                         
@@ -114,17 +114,18 @@ parfor s=1:S0
         end              
         
         % Add tiny value where resps are zero
-        Z(Z==0) = tiny;
-        Z       = bsxfun(@rdivide,Z,sum(Z,2));                    
-        % figure; imshow3D(squeeze(reshape(Z(:,:),[dm K]))) 
-
-        [SS0,SS1] = spm_gmm_lib('SuffStat',X,Z,1);
+%         Z(Z==0) = tiny;
+        Z       = Z + eps;
+        Z       = bsxfun(@rdivide,Z,sum(Z,2));                     
         
         % Build prior
+        [SS0,SS1] = spm_gmm_lib('SuffStat',X,Z,1);
+        
         b  = ones(1,K);
         n  = C*ones(1,K);
+%         MU = zeros(C,K);
         MU = double(bsxfun(@rdivide,SS1,SS0));                
-        V  = C*eye(C);
+        V  = eye(C);
         V  = repmat(V,[1 1 K]);
         
         % Set prior
@@ -179,6 +180,13 @@ for p=1:P
         
         lkp = 1:K;
         
+        C  = size(MU,1);
+        b  = ones(size(b));
+        n  = C*ones(size(n));
+        MU = zeros(size(MU));
+        W  = eye(C,C);
+        W  = repmat(W,[1 1 K]);
+        
         GaussPrior(population0) = {MU,b,W,n,names,lb_pr,lkp};            
     end
 end
@@ -225,7 +233,7 @@ end
 %==========================================================================   
 function Z = resp_from_kmeans(X,K,start_method)
 % Get initial labels using kmeans
-L = spm_kmeans(X,K,'Distance','sqeuclidian','Start',start_method);
+L = spm_kmeans(X,K,'Distance','cityblock','Start',start_method);
 
 % Compute responsibilities from kmeans labels
 Z = zeros([numel(L) K],'single');
