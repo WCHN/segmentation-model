@@ -132,6 +132,8 @@ for i1=1:Nr
     end
 end
 
+Ha = spm_matcomp('LoadDiag', Ha);
+
 % Compute GN step
 ICO    = opt.reg.aff_reg_ICO;
 Update = reshape((Ha + ICO)\(ga + ICO*r(:)),size(r));
