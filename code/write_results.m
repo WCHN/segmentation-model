@@ -176,52 +176,61 @@ clear bf obs x iy
 % Some cleaning up of responsibilities
 %--------------------------------------------------------------------------
 
-if opt.clean.eyeballs
-    % Ad-hoc clean-up to remove crap outside of brain from brain classes           
-    Z = clean_eyeballs(Z,model,y,opt);    
-    % k=1;d=ceil(dm_s(3)/2);figure(666);subplot(121);imagesc(squeeze(Z(:,:,d,k)));subplot(122);imagesc(squeeze(Z1(:,:,d,k)))
+if opt.clean.mrf.do
+    % Ad-hoc MRF clean-up of responsibilities
+    Z = mrf_post(Z,vs_s,opt);
+end
+
+if opt.clean.brain
+    % Clean responsibilities using template, deformation and morphological operations
+    [Z,msk_les] = clean_brain(Z,model,y,opt);
 end
 
 if opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.do
-    if opt.clean.les.cnn_mrf.do
-        % Ad-hoc CNN-MRF clean-up of lesion class (and writing to disk)        
+    % Try to extract binary lesion representation from lesion class of responsibilities
+    
+    % Get lesion class
+    Z_les = Z(:,:,:,opt.clean.les.class); 
+    Z_les(~msk_les) = 0;
+    clear msk_les
+    
+    if opt.clean.les.cnn_mrf.do                        
+        % CNN-MRF clean-up
         x    = cell(1,2);
-        x{1} = single(Z(:,:,:,opt.clean.les.class) > opt.clean.les.val);
+        x{1} = single(Z_les > opt.clean.les.val);
         x{2} = 1 - x{1};
 
         im_clean = spm_cnn_mrf('predict',opt.clean.les.cnn_mrf.pth_net,x,'speak',0,'w_on',0.9,'nit',40);
         im_clean = im_clean{1};
         clear x
     end
-    
-    if opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.do
-        % Get largest connected component
-        if opt.clean.les.cnn_mrf.do
-            les_msk = im_clean > opt.clean.les.val;
-        else
-            les_msk = single(Z(:,:,:,opt.clean.les.class) > opt.clean.les.val) > opt.clean.les.val;
-        end
-        
-        L       = bwlabeln(les_msk);
-        nL      = unique(L);
-        vls     = zeros([1 numel(nL)]);
-        for i=1:numel(nL)
-            vls(i) = sum(sum(sum(L == nL(i))));
-        end
-        [~,ix] = sort(vls);
-
-        if numel(ix) > 1
-            les_msk = L == (ix(end - 1) - 1);
-            les_msk = imfill(les_msk,'holes');
-%             figure;imshow3D(les_msk)    
-        end    
-        les_msk = single(les_msk);    
+            
+    if opt.clean.les.cnn_mrf.do
+        bin_les = im_clean > opt.clean.les.val;
+    else
+        bin_les = Z_les    > opt.clean.les.val;
     end
-    clear im_clean
+    clear im_clean Z_les
     
+    % Get largest connected component
+    L          = bwlabeln(bin_les);
+    nL         = unique(L);
+    vls        = zeros([1 numel(nL)]);
+    for i=1:numel(nL)
+        vls(i) = sum(sum(sum(L == nL(i))));
+    end
+    [~,ix]     = sort(vls);
+
+    if numel(ix) > 1
+        bin_les = L == (ix(end - 1) - 1);
+        bin_les = imfill(bin_les,'holes');
+    end    
+    bin_les = single(bin_les); 
+        
     if opt.write.les(1)
+        % Write to disk
         fname = fullfile(dat.dir.seg,['cles_' nam{1} '.nii']);
-        spm_misc('create_nii',fname,les_msk,mat_s,[spm_type('float32') spm_platform('bigend')],'Lesion (native)');
+        spm_misc('create_nii',fname,bin_les,mat_s,[spm_type('float32') spm_platform('bigend')],'Lesion (native)');
 
         res.cles = nifti(fname);
     end
@@ -231,11 +240,6 @@ if opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.do
 %         prd = logical(les_msk);        
 %         fprintf('ds=%0.3f\n',dice(prd,gt));
 %     end
-end
-
-if opt.clean.mrf.do
-    % Ad-hoc MRF clean-up of segmentation
-    Z = mrf_post(Z,vs_s,opt);
 end
 
 %--------------------------------------------------------------------------
@@ -271,13 +275,13 @@ if any(opt.write.tc(:,3) == true)
 end
 
 if ((opt.clean.les.cnn_mrf.do || opt.clean.les.bwlabeln) && opt.write.les(2))
-    [c,w]   = spm_diffeo('push',les_msk,y,dm_a(1:3));    
-    les_msk = spm_field(w,c,[vs_a  1e-6 1e-4 0  3 2]);
+    [c,w]   = spm_diffeo('push',bin_les,y,dm_a(1:3));    
+    bin_les = spm_field(w,c,[vs_a  1e-6 1e-4 0  3 2]);
     clear w c
     
     fname = fullfile(dat.dir.seg,['wcles_' nam{1} '.nii']);
-    spm_misc('create_nii',fname,les_msk > opt.clean.les.val,mat_a,[spm_type('float32') spm_platform('bigend')],'Lesion (template)');
-    clear les_msk
+    spm_misc('create_nii',fname,bin_les > opt.clean.les.val,mat_a,[spm_type('float32') spm_platform('bigend')],'Lesion (template)');
+    clear bin_les
     
     res.wcles = nifti(fname);
 end

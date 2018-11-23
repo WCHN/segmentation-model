@@ -321,8 +321,8 @@ end
 if ~isfield(opt,'clean') 
     opt.clean          = struct;
 end
-if ~isfield(opt.clean,'eyeballs')
-    opt.clean.eyeballs = true;
+if ~isfield(opt.clean,'brain')
+    opt.clean.brain = true;
 end
 
 % opt.clean.mrf
