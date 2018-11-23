@@ -164,9 +164,12 @@ if opt.write.bf(3)
         Nii.descrip = 'Bias Field Corrected Image in MNI space';
         create(Nii);
 
-        x               = spm_diffeo('bsplins', reshape(obs(:,c).*bf(:,c),dm_s), iy, [4 4 4 0 0 0]);
+        x               = spm_diffeo('pull', reshape(obs(:,c).*bf(:,c),dm_s), iy);
         x(~isfinite(x)) = 0;
-
+        if strcmpi(modality,'MRI')
+            x(x < 0)    = 0;
+        end
+        
         Nii.dat(:,:,:) = single(x);
     end    
 end
