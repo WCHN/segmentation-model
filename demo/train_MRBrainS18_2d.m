@@ -11,7 +11,7 @@
 % _________________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
-clear; clc; close all;
+clear; clc;
 
 % Add to the MATLAB path
 addpath('..');

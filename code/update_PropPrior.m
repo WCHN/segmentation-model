@@ -25,6 +25,7 @@ meanLogX = meanLogX./S0;
 alpha    = double(alpha(:));
 logalpha = log(alpha);
 meanLogX = double(meanLogX(:));
+K        = numel(alpha);
 
 E  = NaN;
 for gn=1:100000
