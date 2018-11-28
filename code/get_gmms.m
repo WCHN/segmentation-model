@@ -69,7 +69,7 @@ parfor s=1:S0
             % figure; imshow3D(squeeze(reshape(msk_nl ,[dm_s])))
             X1     = X(msk_nl,:);
             
-            Z_nl = resp_from_kmeans(X1,K_nl - sum(ix_tiny),'uniform');                        
+            Z_nl = resp_from_kmeans(X1,K_nl - sum(ix_tiny));                        
             X1   = [];
             
             % Get resps for labelled voxels
@@ -97,7 +97,7 @@ parfor s=1:S0
             
             sort_pars = false;
             
-            Z = resp_from_kmeans(X,K - sum(ix_tiny),'uniform');
+            Z = resp_from_kmeans(X,K - sum(ix_tiny));
                         
             nZ  = zeros([size(X,1) K],'single');
             cnt = 1;
@@ -114,16 +114,15 @@ parfor s=1:S0
         end              
         
         % Add tiny value where resps are zero
-%         Z(Z==0) = tiny;
         Z       = Z + eps;
-        Z       = bsxfun(@rdivide,Z,sum(Z,2));                     
+        Z       = bsxfun(@rdivide,Z,sum(Z,2));                             
+%         show_classes_in_Z(Z,dm,K);
         
         % Build prior
         [SS0,SS1] = spm_gmm_lib('SuffStat',X,Z,1);
         
         b  = ones(1,K);
         n  = C*ones(1,K);
-%         MU = zeros(C,K);
         MU = double(bsxfun(@rdivide,SS1,SS0));                
         V  = eye(C);
         V  = repmat(V,[1 1 K]);
@@ -177,9 +176,7 @@ for p=1:P
         b  = b./cnt;
         W  = W./cnt;
         n  = n./cnt;
-        
-        lkp = 1:K;
-        
+                
         C  = size(MU,1);
         b  = ones(size(b));
         n  = C*ones(size(n));
@@ -187,7 +184,7 @@ for p=1:P
         W  = eye(C,C);
         W  = repmat(W,[1 1 K]);
         
-        GaussPrior(population0) = {MU,b,W,n,names,lb_pr,lkp};            
+        GaussPrior(population0) = {MU,b,W,n,names,lb_pr,1:K};            
     end
 end
 model.GaussPrior = GaussPrior;
@@ -231,14 +228,17 @@ end
 %==========================================================================
 
 %==========================================================================   
-function Z = resp_from_kmeans(X,K,start_method)
+function Z = resp_from_kmeans(X,K)
 % Get initial labels using kmeans
-L = spm_kmeans(X,K,'Distance','cityblock','Start',start_method);
+L = spm_kmeans(X,K,'Distance','sqeuclidian', ... % cityblock/sqeuclidian
+                   'Start','plus', ...
+                   'Order','magnitude', ...
+                   'Missing',false);
 
 % Compute responsibilities from kmeans labels
 Z = zeros([numel(L) K],'single');
 for k=1:K
-    Z(:,k) = L(:)==k; 
+    Z(:,k) = L(:) == k; 
 end
 %==========================================================================   
 
