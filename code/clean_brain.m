@@ -109,7 +109,7 @@ if speak
     for k=1:K
         subplot(1,K,k)
         img = [];
-        for i=1:step:dm0(3)
+        for i=1:step0:dm0(3)
             R = Z(:,:,i,k);    
             if find(k == fg0)
                 R(~msk(:,:,i)) = 0;
