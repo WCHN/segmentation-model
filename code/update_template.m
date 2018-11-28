@@ -1,4 +1,4 @@
-function [model,mu,a] = update_template(dat,model,opt,is_init)
+function [model,dat] = update_template(dat,model,opt,is_init)
 
 if nargin < 4, is_init = false; end
 if is_init
@@ -62,17 +62,19 @@ if load_a_der && ~is_init
     end
 else
     % Template derivatives are computed on the fly. This allows for 
-    % iterating the Gauss-Newton solver, handy for debugging.
+    % iterating the Gauss-Newton solver.
     %----------------------------------------------------------------------
     
     for iter=1:opt.template.niter
         H  = zeros([dm(1:3) round(((K-1)*K)/2)],'single'); % 2nd derivatives
         gr = zeros([dm(1:3),K-1],'single');                % 1st derivatives    
         ll = 0;
+%         for s=1:S0
         parfor s=1:S0 
             
             % Subject parameters
-            [obs,dm_s,mat_s,vs_s,scl] = get_obs(dat{s});                
+            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam] = get_obs(dat{s});                
+            
             ff                        = get_ff(vs_s);     
             prop                      = dat{s}.gmm.prop;
             prm_v                     = [vs_s ff*prm_reg];
@@ -108,18 +110,45 @@ else
             [Template,y] = warp_template(model,y,Affine);              
 
             % Get responsibilities
-            Z = get_resp(obs,bf,dat{s},Template,labels,scl,miss,dm_s,opt);   
-            labels = []; Template = []; 
+            Z        = get_resp(obs,bf,dat{s},Template,labels,scl,miss,dm_s,opt);   
+            labels   = []; 
+            Template = []; 
             % figure; imshow3D(squeeze(reshape(Z,[dm_s 9])))                                          
+
+            if opt.verbose.model >= 3
+                % Write 2D versions to disk (for verbose) of..
+                ix_z = floor(dm_s(3)/2) + 1;
+
+                % ..responsibilities 
+                dat{s}.pth.seg2d = fullfile(opt.dir_seg2d,['seg2d_' nam '.nii']);
+                spm_misc('create_nii',dat{s}.pth.seg2d,Z,mat_s,[spm_type('float32') spm_platform('bigend')],'seg2d');                        
+
+                % ..of image (only one channel)
+                [~,~,~,~,~,~,~,chn_names] = obs_info(dat{s}); 
+                for i=1:numel(chn_names)
+                   if strcmpi(chn_names{i},'T1')
+                       break
+                   end
+                end
+
+                im              = reshape(obs(:,i),dm_s(1:3));
+                im              = im(:,:,ix_z);
+                dat{s}.pth.im2d = fullfile(opt.dir_seg2d,['im2d_' nam '.nii']);
+                spm_misc('create_nii',dat{s}.pth.im2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'im2d');   
+                
+                dat{s}.pth.bfim2d = fullfile(opt.dir_seg2d,['bfim2d_' nam '.nii']);
+                spm_misc('create_nii',dat{s}.pth.bfim2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'bfim2d');    
+                im              = [];
+            end
 
             % Push responsibilities in subject space to template space
             Z = push_responsibilities(Z,y,dm_a(1:3)); 
             y = []; 
             % figure; imshow3D(squeeze(Z))
-
+    
             % Compute gradients and Hessian
             [gr_s,H_s,ll_s] = diff_template(a,Z,prop,opt); 
-            Z = [];            
+            Z               = [];            
 
             % Add to global derivatives using bounding box         
             gr = gr + gr_s;

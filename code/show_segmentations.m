@@ -15,10 +15,10 @@ populations = spm_json_manager('get_populations',dat);
 P           = numel(populations);
 S0          = numel(dat);
 
-mx_rows = 14;
+mx_rows = 16;
 nrows   = min(S0,mx_rows); 
 K       = opt.template.K;
-ncols   = K + 1;
+ncols   = K + 2;
 
 cnt_plots = 1;
 for p=1:P
@@ -34,11 +34,19 @@ for p=1:P
             nii = nifti(dat{s}.pth.im2d);    
             img = single(nii.dat(:,:,:,:));
             
-            sb = subplot(nrows,ncols,1 + (cnt_plots - 1)*ncols);
-            if strcmpi(modality,'CT')
-                imagesc(img',[0 100]); axis off xy;
+            if isfield(dat{s}.pth,'bfim2d')
+                nii  = nifti(dat{s}.pth.bfim2d);    
+                bfim = single(nii.dat(:,:,:,:));
+                img  = [img', bfim'];
             else
-                imagesc(img'); axis off xy;
+                img  = img';
+            end                        
+            
+            sb = subplot(nrows,ncols,[1:2] + (cnt_plots - 1)*ncols);
+            if strcmpi(modality,'CT')
+                imagesc(img,[0 100]); axis off xy;
+            else
+                imagesc(img); axis off xy;
             end
             colormap(sb,gray)
 %             title(population)   
@@ -51,7 +59,7 @@ for p=1:P
                 img = [img Z(:,:,:,k)'];
             end
 
-            sb = subplot(nrows,ncols,[2:ncols] + (cnt_plots - 1)*ncols);
+            sb = subplot(nrows,ncols,[3:ncols] + (cnt_plots - 1)*ncols);
             imagesc(img,[0 1]); axis off xy;             
             colormap(sb,pink)
         

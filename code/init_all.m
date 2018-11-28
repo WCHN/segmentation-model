@@ -13,8 +13,10 @@ if opt.template.do
     % Init template from histogram representations of input images
     model       = init_uniform_template(dat,opt); % Create initial uniform template     
     [dat,model] = init_gmm(dat,model,opt);
-    model       = update_template(dat,model,opt,true);
-    show_PropPrior(dat,model,opt);
+    [model,dat] = update_template(dat,model,opt,true);
+    
+    if opt.verbose.model >= 3, show_segmentations(dat,opt); end
+    if opt.verbose.model >= 3, show_PropPrior(dat,model,opt); end
 else  
     % When segmenting a single subject
     [dat,model,opt] = load_model(dat,opt); % Get model parameters (model)        
