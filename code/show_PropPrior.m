@@ -14,7 +14,12 @@ set(0, 'CurrentFigure', f);
 clf(f);
  
 ticklabels = opt.model.nam_cls;
-K          = numel(ticklabels);
+if isempty(ticklabels)
+    K          = opt.template.K;
+    ticklabels = 1:K;
+else
+    K          = numel(ticklabels);    
+end
 
 % Get mean of softmaxed weights
 S0        = numel(dat);
