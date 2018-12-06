@@ -71,10 +71,10 @@ for k=1:K
     if ~isempty(opt.lesion.hemi)
         % Assumes there are two lesion classes, one for each hemisphere
         if k == opt.lesion.hemi{1}
-            img(1:floor(d(1)/2 - 0.05*d(1)),:,:)  = log(1e-4);
+            img(1:floor(d(1)/2 - 0.05*d(1)),:,:)  = log(1e-2);
             img = spm_imbasics('smooth_img',img,12);
         elseif k == opt.lesion.hemi{2}
-            img(ceil(d(1)/2 + 0.05*d(1)):end,:,:) = log(1e-4);
+            img(ceil(d(1)/2 + 0.05*d(1)):end,:,:) = log(1e-2);
             img = spm_imbasics('smooth_img',img,12);
         end
     end
