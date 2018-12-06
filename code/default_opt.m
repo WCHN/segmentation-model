@@ -60,10 +60,10 @@ if ~isfield(opt.gmm,'hist')
     opt.gmm.hist             = struct;
 end
 if ~isfield(opt.gmm.hist,'niter_main') 
-    opt.gmm.hist.niter_main  = 0; % 6
+    opt.gmm.hist.niter_main  = 8;
 end
 if ~isfield(opt.gmm.hist,'niter_gmm') 
-    opt.gmm.hist.niter_gmm   = 10; 
+    opt.gmm.hist.niter_gmm   = 4; 
 end
 if ~isfield(opt.gmm.hist,'init_ix') 
     % For setting indices of classes (e.g. to match different modalities)
@@ -414,9 +414,9 @@ if isempty(opt.ct.GaussPrior)
     lb_prW.KL_qVpV = 0;
     lb_prW.ElnDetV = zeros(1,opt.template.K);
 
-    b  = ones(1,opt.template.K);
-    n  = ones(1,opt.template.K);    
-    MU = 30*ones([1 opt.template.K]);
+    b  = 1e4*ones(1,opt.template.K);
+    n  = 0.04*ones(1,opt.template.K);    
+    MU = [-995 -50 10 linspace(20,50,opt.template.K - 6) 70 100 500];
     W  = ones([1 1 opt.template.K]);
 
     opt.ct.GaussPrior = {MU,b,W,n,'CT',lb_prW,1:opt.template.K};   
@@ -522,9 +522,9 @@ if opt.template.do
     opt.verbose.model    = 3; 
     opt.bf.mc_bf_verbose = true;     
     
-    opt.start_it.do_prop    = 2;
-    opt.start_it.do_upd_mrf = 2;
-    opt.start_it.do_mg      = 3;
+    opt.start_it.do_mg      = 1;
+    opt.start_it.do_prop    = 2;        
+    opt.start_it.do_upd_mrf = 5;
 end
 
 opt.dir_output_train = fullfile(opt.dir_output,'train');
@@ -537,7 +537,7 @@ def = spm_shoot_defaults;
 
 if opt.template.do
     sched.gmm = opt.gmm.niter;
-    sched.reg = [128 64 def.sched(1:end)];    
+    sched.reg = def.sched(1:end);    
     sched.eul = def.eul_its;
 else    
     sched.gmm = opt.gmm.niter;       
