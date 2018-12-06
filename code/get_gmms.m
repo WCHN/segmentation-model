@@ -24,7 +24,6 @@ parfor s=1:S0
         % Initilisation of GMMs when data is CT
         %------------------------------------------------------------------                
 
-        if 0
         if 1
             SHOW_FIT = 0;
 
