@@ -253,11 +253,11 @@ for it_seg=1:opt.seg.niter
     %----------------------------------------------------------------------
     
     if do_prop         
-        for it_bf=1:2                
+        for it_prop=1:4               
             % Start with updating GMM parameters
             dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
 
-            if (it_bf > 1 && ~((dat.lb.last - oll)>2*opt.bf.tol*I)) || it_bf == opt.bf.niter, break; end
+            if (it_prop > 1 && ~((dat.lb.last - oll)>2*opt.bf.tol*I)) || it_prop == opt.bf.niter, break; end
             oll = dat.lb.last;
 
             % Update tissue proportions
@@ -276,11 +276,11 @@ for it_seg=1:opt.seg.niter
     %----------------------------------------------------------------------
     
     if opt.do.update_mrf && opt.do.mrf && (it_mod >= opt.start_it.do_upd_mrf || it_seg >= opt.start_it.do_upd_mrf)
-        for it_bf=1:2
+        for it_mrf=1:2
             % Start with updating GMM parameters
             dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
 
-            if it_bf == 2, break; end        
+            if it_mrf == 2, break; end        
 
             % Update MRF weights        
             dat = update_mrf(dat,obs,bf,Template,dm_s,labels,scl,miss,opt);                    
