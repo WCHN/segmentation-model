@@ -33,6 +33,11 @@ for iter=1:niter
     model = update_GaussPrior(dat,model,opt);    
 end
 
+% Set prop to uniform
+for s=1:S0
+    dat{s}.gmm.prop = ones(size(dat{s}.gmm.prop))/numel(dat{s}.gmm.prop);
+end
+
 % Set ElnDetV to zero
 populations  = spm_json_manager('get_populations',dat);
 P            = numel(populations);
