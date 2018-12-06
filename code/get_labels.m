@@ -1,4 +1,5 @@
 function [labels,mn,mx] = get_labels(dat,opt)
+
 mn     = 0;
 mx     = 0;
 labels = {}; 
@@ -21,7 +22,9 @@ if isfield(dat,'label') && opt.gmm.labels.use
     
     mn = min(labels);
     mx = max(labels);
+            
+    CM = get_label_cm(dat,opt);
     
-    labels = {labels,dat.gmm.cm};   
+    labels = {labels,CM};   
 end
 %==========================================================================

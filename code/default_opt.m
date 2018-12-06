@@ -14,6 +14,9 @@ end
 if ~isfield(opt,'model') 
     opt.model         = struct;
 end
+if ~isfield(opt.model,'it') 
+    opt.model.it      = 1;
+end
 if ~isfield(opt.model,'tol') 
     opt.model.tol     = 1e-4;
 end
@@ -546,4 +549,6 @@ end
 % stps    = 20;
 % sched.a = mx*exp(-(linspace(0,-log(1/mx),stps)));
 sched.a = def.sched([2*ones(1,START_NL_TEMPL) 2:numel(def.sched)]);
+
+sched.labels = opt.gmm.labels.S;
 %==========================================================================

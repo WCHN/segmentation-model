@@ -1,6 +1,4 @@
-function [dat,res] = segment_subject(dat,model,opt,it_mod)
-
-if nargin < 4, it_mod = 1; end
+function [dat,res] = segment_subject(dat,model,opt)
 
 set_globals;
 
@@ -17,6 +15,7 @@ mat_a      = model.template.nii.mat;       % Template orientation matrix
 dm_a       = model.template.nii.dat.dim;   % Template orientation matrix   
 PropPrior  = model.PropPrior;              % Proportion prior parameter
 GaussPrior = model.GaussPrior(dat.population); 
+it_mod     = opt.model.it;
 
 % Subject parameters
 [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam] = get_obs(dat); % Image (obs) and image properties   

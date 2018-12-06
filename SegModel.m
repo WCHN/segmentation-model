@@ -63,6 +63,8 @@ dat = SegModel_init(dat,opt);
 model.lb = -Inf;
 for it_mod=1:opt.model.niter                            
     
+    opt.model.it = it_mod;
+    
     % Set-up loading template derivatives from disk       
     dat = init_load_a_der(dat,opt);
 
@@ -70,10 +72,10 @@ for it_mod=1:opt.model.niter
     [dat,model] = introduce_lkp(dat,model,opt,it_mod);
 
     % Do segmentation
-    [holly,dat] = distribute(holly,'segment_subject','inplace',dat,model,opt,it_mod);      
+    [holly,dat] = distribute(holly,'segment_subject','inplace',dat,model,opt);      
 
     % Some model parameters changes with iteration number
-    opt = modify_opt(opt,it_mod);                      
+    opt = modify_opt(opt,it_mod);
 
     % Mean correct the rigid-body transforms
     dat = meancorrect_aff(dat,opt);
