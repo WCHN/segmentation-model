@@ -121,7 +121,7 @@ else
 
                 % ..responsibilities 
                 dat{s}.pth.seg2d = fullfile(opt.dir_seg2d,['seg2d_' nam '.nii']);
-                spm_misc('create_nii',dat{s}.pth.seg2d,Z,mat_s,[spm_type('float32') spm_platform('bigend')],'seg2d');                        
+                spm_misc('create_nii',dat{s}.pth.seg2d,Z(:,:,ix_z,:),mat_s,[spm_type('float32') spm_platform('bigend')],'seg2d');                        
 
                 % ..of image (only one channel)
                 [~,~,~,~,~,~,~,chn_names] = obs_info(dat{s}); 

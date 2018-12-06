@@ -377,6 +377,7 @@ if opt.verbose.model >= 3
 
     if numel(bf) > 1
         bfz  = reshape(bf(:,i),dm_s(1:3));
+        bfz  = bfz(:,:,ix_z);
         im   = bfz.*im;
     end
     

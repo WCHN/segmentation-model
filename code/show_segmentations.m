@@ -36,10 +36,10 @@ for p=1:P
             
             if isfield(dat{s}.pth,'bfim2d')
                 nii  = nifti(dat{s}.pth.bfim2d);    
-                bfim = single(nii.dat(:,:,:,:));
+                bfim = single(nii.dat(:,:,:));
                 img  = [img', bfim'];
             else
-                img  = img';
+                img = img';
             end                        
             
             sb = subplot(nrows,ncols,[1:2] + (cnt_plots - 1)*ncols);
@@ -49,7 +49,6 @@ for p=1:P
                 imagesc(img); axis off xy;
             end
             colormap(sb,gray)
-%             title(population)   
 
             nii = nifti(dat{s}.pth.seg2d);    
             Z   = single(nii.dat(:,:,:,:));
