@@ -37,9 +37,11 @@ end
 pth_template  = fullfile(dir_model,'template.nii');   
 [pth,nam,ext] = fileparts(pth_template);
 
-img  = zeros(d,'single');
 vols = cell(K,1);
 for k=1:K    
+    
+    img = zeros(d,'single');
+    
     vols{k} = fullfile(pth,[nam num2str(k) ext]);
     spm_misc('create_nii',vols{k},img,M,[spm_type('float32') spm_platform('bigend')],'template');
 end
@@ -59,9 +61,25 @@ end
 model              = struct;
 model.template.nii = nifti(pth_template);
 
-if opt.template.resize
-    % Crop template
-    model = resize_template(model,opt);
+% Crop template and/or change voxel sizes
+model = resize_template(model,opt);
+d     = model.template.nii.dat.dim;
+
+for k=1:K        
+    img = log(ones(d(1:3),'single')/K);
+    
+    if ~isempty(opt.lesion.hemi)
+        % Assumes there are two lesion classes, one for each hemisphere
+        if k == opt.lesion.hemi{1}
+            img(1:floor(d(1)/2 - 0.05*d(1)),:,:)  = log(1e-4);
+            img = spm_imbasics('smooth_img',img,12);
+        elseif k == opt.lesion.hemi{2}
+            img(ceil(d(1)/2 + 0.05*d(1)):end,:,:) = log(1e-4);
+            img = spm_imbasics('smooth_img',img,12);
+        end
+    end
+    
+    model.template.nii.dat(:,:,:,k) = img;
 end
 
 % Get values to be used for FOV voxels when warping 

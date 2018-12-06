@@ -419,6 +419,14 @@ if isempty(opt.ct.GaussPrior)
     opt.ct.GaussPrior = {MU,b,W,n,'CT',lb_prW,1:opt.template.K};   
 end
 
+% opt.lesion
+if ~isfield(opt,'lesion') 
+    opt.lesion      = struct;
+end
+if ~isfield(opt.lesion,'hemi')
+    opt.lesion.hemi = [];
+end
+
 % opt.write
 if ~isfield(opt,'write') 
     opt.write     = struct;
