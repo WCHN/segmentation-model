@@ -1,33 +1,42 @@
 function [model,dat] = update_template(dat,model,opt,is_init)
+% FORMAT [model,dat] = update_template(dat,model,opt,is_init)
+% dat     - Subject data structure
+% model   - Model structure
+% opt     - Options structure
+% is_init - 
+%
+% Update the template by Gauss-Newton.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 if nargin < 4, is_init = false; end
 if is_init
-    opt.template.niter = 1;
+    opt.template.niter = 1;             % Number of GN iterations
 end
 
 % Options
-reg        = opt.template.reg;
-verbose    = opt.template.verbose;
-shrink     = opt.template.shrink;
-B          = opt.reg.B;
-prm_reg    = opt.reg.rparam;
-int_args   = opt.reg.int_args;
-load_a_der = opt.template.load_a_der;
-R          = opt.template.R;
-nii_a      = model.template.nii;
+reg        = opt.template.reg;          % [a m b] Template regularisation
+verbose    = opt.template.verbose;      % Verbosity level
+shrink     = opt.template.shrink;       % Crop template so it fits pushed data
+B          = opt.reg.B;                 % Affine Lie basis
+prm_reg    = opt.reg.rparam;            % [a m b le1 le1] Velocity regularisation
+int_args   = opt.reg.int_args;          % Number of integration steps
+load_a_der = opt.template.load_a_der;   % Precomputed template derivatives
+R          = opt.template.R;            % Template null-space rotation
+nii_a      = model.template.nii;        % Nifti holding the template
 
 % Parameters
-S0     = numel(dat); % Number of subjects
-dm     = [nii_a.dat.dim,1,1,1];
-K      = dm(4);
-rits   = [1 1]; % No. cycles and no. relaxation iterations
-mat_a  = nii_a.mat;
-dm_a   = nii_a.dat.dim;
-vs_a   = spm_misc('vxsize',mat_a);
-prm_a  = [vs_a prod(vs_a)*reg];
+S0     = numel(dat);                    % Number of subjects
+dm     = [nii_a.dat.dim,1,1,1];        
+K      = dm(4);                         % Number of template classes
+rits   = [1 1];                         % FMG cycles and relaxation iterations
+mat_a  = nii_a.mat;                     % Template vox2world matrix
+dm_a   = nii_a.dat.dim;                 % Template dimensions
+vs_a   = spm_misc('vxsize',mat_a);      % Template voxel size
+prm_a  = [vs_a prod(vs_a)*reg];         % Template reg param vector
 
 % Initial starting estimates
-a = rotate_template(nii_a,opt);
+a = rotate_template(nii_a,opt);         % Send previous template in null space
 
 %--------------------------------------------------------------------------
 % Compute/load pushed responsibilities then update template using Gauss-Newton
@@ -61,8 +70,8 @@ if load_a_der && ~is_init
         fprintf('update_template | %2d | ll = %6.6f    ll_a = %6.6f    ll + ll_a = %6.6f    ss2 = %6.6f\n',1,ll/prod(dm(1:3)), ll1/prod(dm(1:3)), (ll+ll1)/prod(dm(1:3)), (ss2)/prod(dm(1:3)));
     end
 else
-    % Template derivatives are computed on the fly. This allows for 
-    % iterating the Gauss-Newton solver.
+    % Template derivatives are computed on the fly.
+    % This allows for iterating the Gauss-Newton solver.
     %----------------------------------------------------------------------
     
     for iter=1:opt.template.niter
@@ -206,6 +215,14 @@ end
 
 %==========================================================================
 function [a,ss1,ll1,ss2] = solve_template(a,gr,H,prm,its)
+% FORMAT [a,ss1,ll1,ss2] = solve_template(a,gr,H,prm,its)
+% a   - log-template in null space
+% gr  - Template gradient
+% H   - Template Hessian
+% prm - Regularisation parameters  [vs abs memb bend]
+% its - Full multi grid parameters [cycles relax] 
+%
+% Perform one Gauss-Newton update of the template.
 % ss1 and ss2 are for examining how close the 1st derivatives are to zero.
 % At convergence, the derivatives from the likelihood term should match those
 % from the prior (regularisation) term.

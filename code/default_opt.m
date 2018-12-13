@@ -1,4 +1,171 @@
 function [opt,holly] = default_opt(opt)
+% FORMAT [opt,holly] = default_opt(opt)
+% opt   - Options structure
+% holly - Parallel processing structure
+%
+% Defines default options.
+% Options that were already set in the input structure are not overriden.
+%
+%--------------------------------------------------------------------------
+%
+% GENERAL
+% -------
+% opt.sched
+%
+% MODEL
+% -----
+% opt.model.it
+% opt.model.tol
+% opt.model.niter
+% opt.model.nam_cls
+% opt.model.clean_up
+% opt.model.PropPrior.do
+%
+% GMM
+% -----
+% opt.gmm.niter
+% opt.gmm.tol
+% opt.gmm.pth_GaussPrior
+% opt.gmm.pth_PropPrior
+% opt.gmm.hist.niter_main
+% opt.gmm.hist.niter_gmm
+% opt.gmm.hist.init_ix
+% opt.gmm.hist.verbose
+% opt.gmm.labels.cm
+% opt.gmm.labels.use
+% opt.gmm.labels.S
+%
+% TEMPLATE
+% -----
+% opt.template.do
+% opt.template.pth_template
+% opt.template.K
+% opt.template.vs
+% opt.template.reg0
+% opt.template.reg
+% opt.template.shrink
+% opt.template.load_a_der
+% opt.template.R
+% opt.template.sym
+% opt.template.niter
+% opt.template.verbose
+% opt.template.bg_class
+% opt.template.resize
+% opt.template.keep_neck
+%
+% REGISTRATION
+% ------------
+% opt.reg.rparam0
+% opt.reg.rparam
+% opt.reg.rparam
+% opt.reg.int_args
+% opt.reg.niter
+% opt.reg.tol
+% opt.reg.strt_nl
+% opt.reg.mc_aff
+% opt.reg.aff_type
+% opt.reg.aff_reg
+% opt.reg.do_aff
+% opt.reg.do_nl
+% opt.reg.nit_init_aff
+% opt.reg.init_aff_tol
+%
+% SEGMENTATION
+% ------------
+% opt.seg.niter     
+% opt.seg.tol            
+% opt.seg.show         
+% opt.seg.samp       
+% opt.seg.bg           
+% opt.seg.mrf.ml      
+% opt.seg.mrf.val_diag 
+% opt.seg.mrf.alpha    
+%
+% BIAS FIELD
+% ----------
+% opt.bf.biasfwhm   
+% opt.bf.niter        
+% opt.bf.tol         
+% opt.bf.mc_bf       
+% opt.bf.biasreg    
+% opt.bf.do            
+% opt.bf.mc_bf_verbose 
+%
+% PROPROTIONS
+% -----------
+% opt.prop.niter 
+% opt.prop.tol      
+% opt.prop.reg  
+% opt.prop.do   
+%
+% LINE SEARCH
+% -----------
+% opt.nline_search.bf  
+% opt.nline_search.aff  
+% opt.nline_search.nl   
+% opt.nline_search.prop 
+%
+% CLEANING
+% --------
+% opt.clean.brain
+% opt.clean.mrf         
+% opt.clean.mrf.do      
+% opt.clean.mrf.strength 
+% opt.clean.mrf.niter
+% opt.clean.les      
+% opt.clean.les.bwlabeln 
+% opt.clean.les.val    
+% opt.clean.les.class 
+% opt.clean.les.cnn_mrf.do    
+% opt.clean.les.cnn_mrf.lkp   
+% opt.clean.les.cnn_mrf.pth_net
+%
+% STARTING ITERATION
+% ------------------
+% opt.start_it.do_mg   
+% opt.start_it.do_prop 
+% opt.start_it.do_upd_mrf 
+%
+% ACTIVATE/DEACTIVATE
+% -------------------
+% opt.do.mg
+% opt.do.update_mrf 
+% opt.do.mrf
+%
+% CT-SPECIFIC
+% -----------
+% opt.ct.GaussPrior
+%
+% LESIONS
+% -------
+% opt.lesion.hemi
+%
+% FILES TO WRITE
+% --------------
+% opt.write.tc
+% opt.write.bf
+% opt.write.df
+% opt.write.ml
+% opt.write.les
+% opt.dir_output_train
+% opt.dir_output_seg
+%
+% DICTIONARIES
+% ------------
+% opt.dict.lkp
+% opt.dict.prop_exc
+%
+% VERBOSITY
+% ---------
+% opt.verbose.level
+% opt.verbose.model;
+% opt.verbose.gmm
+% opt.verbose.reg
+% opt.verbose.bf
+% opt.verbose.prop
+% opt.verbose.mrf
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 if nargin < 1, opt = struct; end
 

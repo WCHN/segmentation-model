@@ -1,32 +1,48 @@
 function model = update_PropPrior(dat,model,opt,it_mod)
-% FORMAT [alpha,gn] = update_dirichlet_prior(alpha, meanLogX)
-% 
-% alpha    - Kx1 - Previous value of the Dirichlet parameters
-% meanLogX - Kx1 - Mean of the log of the observations (mean(log(X)))
+% FORMAT model = update_PropPrior(dat,model,opt,it_mode)
+% dat    - Subjects data structure
+% model  - Model structure
+% opt    - Options structure
+% it_mod - Current EM iteration
+%
+% Update the parameters of the Dirichlet prior over tissue weights.
+% This is done iteratively using Gauss-Newton optimisation.
+%
+% Uses:
+% model.PropPrior.alpha
+% model.PropPrior.norm
+% dat.gmm.prop
+% opt.model.PropPrior.do
+% opt.start_it.do_prop
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 if ~opt.model.PropPrior.do
+    % If Dirichlet parameters should not be optimised, return
     return;
 end
 
 if it_mod < opt.start_it.do_prop
+    % If it's too soon for that, return
     return;
 end
 
-S0    = numel(dat);
-alpha = model.PropPrior.alpha;
-K     = numel(alpha);
+S0    = numel(dat);            % Number of subjects
+alpha = model.PropPrior.alpha; % Previous value of the Dirichlet parameters
 
+% meanLogX: [Kx1] Mean of the log of the observations (mean(log(X)))
 meanLogX = 0;
 for s=1:S0
     meanLogX = meanLogX + log(spm_matcomp('softmax',dat{s}.gmm.prop));
 end
 meanLogX = meanLogX./S0;
 
-alpha    = double(alpha(:));
-logalpha = log(alpha);
-meanLogX = double(meanLogX(:));
-K        = numel(alpha);
+alpha    = double(alpha(:));    % Dirichlet parammeters
+logalpha = log(alpha);          % Log of Dirichlet parameters
+meanLogX = double(meanLogX(:)); % Mean of the log of the observations
+K        = numel(alpha);        % Number of classes
 
+% Gauss-Newton iterations
 E  = NaN;
 for gn=1:100000
     

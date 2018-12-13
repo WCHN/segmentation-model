@@ -1,4 +1,15 @@
 function opt = modify_opt(opt,iter)
+% FORMAT opt = modify_opt(opt,iter)
+% opt  - Options structure
+% iter - Current EM iteration
+%
+% Modify options based on the current iteration.
+% This allows to have parameters change every few iterations:
+% - decrease regularisation (template, deformation)
+% - increase precision (GMM iterations, shooting integration steps)
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
 sched = opt.sched;
 
 if isfield(opt,'template') && isfield(opt.template,'reg0')

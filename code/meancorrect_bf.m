@@ -1,5 +1,14 @@
-function dat = meancorrect_bf(dat,GaussPrior,opt,it_mod)
-if nargin < 4, it_mod = 0; end
+function dat = meancorrect_bf(dat,GaussPrior,opt)
+% FORMAT dat = meancorrect_bf(dat,GaussPrior,opt)
+% dat        - Subjects data structure
+% GaussPrior - Cell of GMM prameters
+% opt        - Options structure
+%
+% Zero-centre bias field mean-value across subjects.
+% Since GMM parameters are stongly impacted by the bias mean value, they
+% are updated after zero-centering.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 if opt.bf.mc_bf && opt.bf.do
     % Parameters

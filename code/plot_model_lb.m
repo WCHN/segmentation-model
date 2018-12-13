@@ -1,4 +1,17 @@
 function plot_model_lb(dat,model,it,opt)
+% FORMAT plot_model_lb(dat,model,it,opt)
+% dat   - Subjects data structure
+% model - Model structure
+% it    - Current EM iteration
+% opt   - Options structure
+%
+% Plot the lower bound (for each population) and its different parts:
+% * Template posterior
+% * Template prior
+% * Template likelihood
+% * GMM constraint
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Get figure (create if it does not exist)
 figname = '(SPM) Model lower bound';
