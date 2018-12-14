@@ -1,4 +1,15 @@
 function [bb,xbb,ybb,zbb,dm_bb] = get_bb(img,mat,dm,bb)
+% FORMAT [bb,xbb,ybb,zbb,dm_bb] = get_bb(img,mat,dm,[bb])
+% img         - An image with positive values
+% mat         - Image voxel-to-world matrix
+% dm          - Image dimensions
+% bb          - Bounding box of stricly positive data.
+%               If provided, only xbb, ybb, zbb is computed.
+% xbb,ybb,zbb - List of indices covering the bounding box in x/y/z dimension
+% dm_bb       - Dimensions on the bounding box
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
 if nargin<4, bb = zeros(3,2); end
 
 if ~isempty(dm) && dm(3) == 1

@@ -1,4 +1,15 @@
 function [bf,ll] = get_bf(chan,dm,varargin)
+% FORMAT [bf,ll] = get_bf(chan,dm,[bf,c,ll])
+% chan - Structure array containing bias field encoding for all channels
+% dm   - Dimension of the lattice on which to reconstruct the bias field
+% c    - Channel to reconstruct (if not provided, reconstruct all channels)
+% bf   - Reconstructed bias field
+% ll   - Log-likelihood
+%
+% Reconstruct one or all bias fields on the full lattice from their DCT
+% encoding.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 C  = numel(chan);
 I  = prod(dm);
 Iz = prod(dm(1:2));

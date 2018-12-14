@@ -1,4 +1,21 @@
 function reg = get_reg(dat,fct,opt)
+% FORMAT reg = get_reg(dat,fct,opt)
+% dat - Subject's data structure (one subject)
+% fct - Facts structure obtained from `get_facts`
+% opt - Options structure
+% reg - Registration structure with fields:
+%       * prm    - Regularisation parameters [vs a m b le1 le2]
+%       * Greens - Regularisation oerator's Greens functions
+%       * v      - Loaded velocity field
+%       * y      - Exponentiated warp
+%       * Affine - Exponentiated affine matrix
+%
+% Create registration structure with:
+% * loaded velocity
+% * exponentiated warp
+% * exponentiated affine matrix
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % FFT of Green's function
 reg.prm                             = [fct.subj.vs fct.subj.ff*opt.reg.rparam];

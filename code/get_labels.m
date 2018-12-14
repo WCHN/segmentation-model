@@ -1,5 +1,15 @@
 function [labels,mn,mx] = get_labels(dat,opt)
-
+% FORMAT [labels,mn,mx] = get_labels(dat,opt)
+% dat    - Subject's data structure (one subject)
+% opt    - Options structure
+% labels - {1} Image of labels (in uint8)
+%          {2} Confusion matrix
+% mn     - Minimum label value
+% mx     - Maximum label value
+%
+% Load image of labels from disk + post-process + get confusion matrix
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 mn     = 0;
 mx     = 0;
 labels = {}; 
