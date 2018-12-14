@@ -110,6 +110,10 @@ for it_mod=1:opt.model.niter
     save(fname,'dat','-v7.3');    
     fname = fullfile(opt.dir_model,'opt.mat');
     save(fname,'opt','-v7.3');
+    fname = fullfile(opt.dir_model,'model.mat');
+    save(fname,'model','-v7.3');
+    fname = fullfile(opt.dir_model,'holly.mat');
+    save(fname,'holly','-v7.3');
 end
 
 if opt.model.clean_up
