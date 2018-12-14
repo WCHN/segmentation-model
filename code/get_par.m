@@ -4,7 +4,7 @@ function varargout = get_par(varargin)
 %
 % FORMAT lkp     = get_par('lkp',modality,opt)
 % FORMAT miss    = get_par('missing_struct',obs)
-% FORMAT ix      = get_par('ix_zero_resp',population,lkp,opt)
+% FORMAT ix      = get_par('ix_tiny',population,lkp,opt)
 % FORMAT tiny    = get_par('tiny')
 % FORMAT [bg,gf] = get_par('bg_fg',bg,K)
 %
