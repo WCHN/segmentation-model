@@ -1,4 +1,15 @@
 function cluster = get_cluster(obs,bf,dm,GaussPrior,miss,in,varargin)
+% FORMAT cluster = get_cluster(obs,bf,dm,GaussPrior,miss,in,['sort_pars',true/false])
+% obs        - Observed image [Nx Ny Nz P] 
+% bf         - Bias field [Nx Ny Nz P] (or 1 if no bias field)
+% dm         - Image dimensions
+% GaussPrior - GMM prior parameters {MU,b,V,n}
+% miss       - Structure handling missing data (fields: C, L, nL)
+% in         - Initial GMM posterior parameters {{MU,b},{V,n}}
+% sort_pars  - If true, sort cluster by ascending magnitude.
+% cluster    - Final GMM posterior parameters {{MU,b},{V,n}}
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Parse inputs
 %--------------------------------------------------------------------------

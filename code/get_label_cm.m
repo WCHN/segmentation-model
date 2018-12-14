@@ -1,11 +1,32 @@
 function CM = get_label_cm(dat,opt)
+% FORMAT CM = get_label_cm(dat,opt)
+% dat - Subjects data structure
+% opt - Options structure
+% CM  - confusion matrix
+%
+% Build Rater confusion matrix for one subject.
+% This matrix maps template classes to manually segmented classes.
+% Manual labels often do not follow the same convention as the Template, 
+% and not all regions may be labelled. Therefore, a manual label may 
+% correspond to several Template classes and, conversely, one Template
+% class may correspond to several manual labels.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
-population = dat.population;
-iter       = opt.model.it;
-cm         = opt.gmm.labels.cm;
+% Here, we assume that all subjects from the same population (e.g.,
+% a publicily available dataset) have the same labelling protocole and 
+% confusion matrix.
+% We allow the rater's sensitivity to change every few acquistion. We would
+% typically start with a high sensitivity, to weight the labels strongly,
+% and then decrease this value to allow the model to correct the rater's
+% mistakes (especially near boundaries).
+
+population = dat.population;    % Population of the subject
+iter       = opt.model.it;      % Current iteration
+cm         = opt.gmm.labels.cm; % Dictionary pop -> class mapping
 % rater_sens = opt.gmm.labels.S;
 rater_sens = opt.sched.labels(min(numel(opt.sched.labels),iter));
-K          = opt.template.K;
+K          = opt.template.K;    % Number of template classes
 
 if ~cm.isKey(population)
     ix = zeros(1,K);
@@ -17,9 +38,9 @@ if numel(ix)~=K
     error('numel(cm_p)~=K')
 end
 
-%----------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Build confusion matrix 
-%----------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 ix_ul = max(ix) + 1;    % Unlabelled voxels (0) are assumed to have value: num(labels) + 1
 CM    = zeros(ix_ul,K); % Confusion matrix is of size: (num(labels) + 1) x num(tissue)

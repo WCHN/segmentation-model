@@ -4,14 +4,14 @@ function varargout = get_par(varargin)
 %
 % FORMAT lkp     = get_par('lkp',modality,opt)
 % FORMAT miss    = get_par('missing_struct',obs)
-% FORMAT ix      = get_par('ix_zero_resp',population,lkp,opt)
+% FORMAT ix      = get_par('ix_tiny',population,lkp,opt)
 % FORMAT tiny    = get_par('tiny')
 % FORMAT [bg,gf] = get_par('bg_fg',bg,K)
 %
 % FORMAT help get_par>function
 % Returns the help file of the selected function.
 %__________________________________________________________________________
-% Copyright (C) 2017 Wellcome Trust Centre for Neuroimaging
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 if nargin == 0
     help get_par
@@ -39,7 +39,14 @@ end
 %==========================================================================
 function [lkp,mg] = get_lkp(modality,opt)
 % FORMAT [lkp,mg] = get_par('lkp',modality,opt)
+% modality - Modality name
+% opt      - Options structure
+% lkp      - Mapping from GMM clusters to template classes
+% mg       - Intra-class weight.
+%
+% Create GMM to Template mapping.
 %__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 K    = opt.template.K;
 dict = opt.dict.lkp;
 if dict.isKey(modality)
@@ -62,7 +69,16 @@ end
 %==========================================================================
 function miss = get_miss(obs)
 % FORMAT miss = get_par('missing_struct',obs)
+% obs  - Observed image
+% miss - Structure with fields:
+%        * C  - Code image (each code corresponds to a missing configuration)
+%        * L  - List of missing codes
+%        * nL - Number of missing codes
+%
+% Create mising data structure (code image, list of codes) from observed
+% image.
 %__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 miss    = struct;
 miss.C  = spm_gmm_lib('obs2code',obs);
 miss.L  = unique(miss.C);
@@ -72,7 +88,10 @@ miss.nL = numel(miss.L);
 %==========================================================================
 function [ix_tiny,ix0] = get_ix_tiny(population,lkp,opt)
 % FORMAT ix_tiny = get_par('ix_tiny',population,lkp,opt)
+%
+% Mapping between manual labels and template classes.
 %__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 K      = opt.template.K;
 dict   = opt.dict.prop_excl;
 if dict.isKey(population)
@@ -96,14 +115,20 @@ end
 %==========================================================================
 function tiny = get_tiny
 % FORMAT tiny = get_par('tiny')
+%
+% Return tiny value.
 %__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 tiny = 1e-4;
 %==========================================================================
 
 %==========================================================================
 function [bg,fg] = get_bg_fg(bg,K)
 % FORMAT [bg,fg] = get_par('bg_fg',bg,K)
+%
+% Create a mask of foregound indices.
 %__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 fg  = 1:K;    
 msk = ismember(fg,bg);
 fg  = fg(~msk);

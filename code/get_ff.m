@@ -1,4 +1,8 @@
 function ff = get_ff(vs,fwhm)
+% FORMAT ff = get_ff(vs,[fwhm])
+% vs   - Voxel size
+% fwhm - Approximate full-with half-max of the observed image.
+%
 % Fudge Factor - to (approximately) account for non-independence of voxels.
 % Note that variances add, and that Var[a*x + b*y] = a^2*Var[x] + b^2*Var[y]
 % Therefore the variance of i.i.d. noise after Gaussian smoothing is equal
@@ -8,6 +12,11 @@ function ff = get_ff(vs,fwhm)
 % Gaussian. Letting s2 = 2/sqrt(2), this is equal to
 % (4*pi*s^2)^(-1/2)*(2*pi*s2^2)^(-1/2)*exp(-0.5*x.^2/s2^2), from which
 % the (4*pi*s^2)^(-1/2) factor comes from.
+%
+% //!\\ Currently not used, so this function returns 1
+%       (i.e., voxels are assumed independent)
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 if nargin<2, fwhm = 0; end % FWHM of image smoothness
 
 if 0

@@ -1,4 +1,23 @@
 function [slices,miss,lblnDetbf] = get_slices(dat,model,opt,do,reg)
+% FORMAT [slices,miss,lblnDetbf] = get_slices(dat,model,opt,do,reg)
+% dat       - Subject's data structure (one subject)
+% model     - Model structure
+% opt       - Options structure
+% do        - Do structure with field bf 
+% reg       - Registration structure obtained from `get_reg`
+% slices    - Structure array with `nz` elements and fields
+%             * obs      - One slice of observations
+%             * bf       - One slice of bias fields
+%             * template - One slice of warped + softmaxed template
+%             * code     - One slice of code image
+%             * bin_var  - Bin variance
+%             * labels   - One slice of manual labels
+% miss      - Missing data structure
+% lblnDetbf - Bias field normalisation constant
+%
+% Split all useful arrays into slices.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 %--------------------------------------------------------------------------
 % Parameters

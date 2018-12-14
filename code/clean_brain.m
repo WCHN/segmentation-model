@@ -1,4 +1,15 @@
 function [Z,msk_les] = clean_brain(Z,model,y,opt)
+% FORMAT [Z,msk_les] = clean_brain(Z,model,y,opt)
+% Z       - Class responsibilities [Nx Ny Nz K]
+% model   - Model structure
+% y       - Transform to warp template to subject [Nx Ny Nz 3]
+% opt     - Options structure
+% msk_les - Lesion mask
+%
+% Clean-up resulting (soft) segmentations using a series of educated
+% heuristics.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Parameters
 speak = false;

@@ -1,4 +1,18 @@
 function [dm,mat,vs,C,nam,V,fnames,chn_names] = obs_info(dat)
+% FORMAT [dm,mat,vs,C,nam,V,fnames,chn_names] = obs_info(dat)
+% dat       - Subject's data structure (one subject)
+% dm        - Observed image dimension
+% mat       - Observed image orientation matrix
+% vs        - Observed image voxel size
+% C         - Number of channels
+% nam       - Modality name
+% V         - spm_vol handle of observed images
+% fnames    - Filenames of observed images
+% chn_names - Channel names
+%
+% Return useful information about the observed image.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 if isfield(dat.modality{1},'channel')    
     C         = numel(dat.modality{1}.channel);

@@ -1,4 +1,24 @@
 function Z = get_resp(obs,bf,dat,template,labels,BinWidth,miss,dm,opt,varargin)
+% FORMAT Z = get_resp(obs,bf,dat,template,labels,BinWidth,miss,dm,opt,['use_uint',...,'z',...])
+% obs      - Observed image
+% bf       - Reconstructed bias field
+% dat      - Subject's data structure
+% template - Warped and softmaxed template
+% labels   - Manual labels
+% BinWidth - Observed values precision (adds a bit of regularisation)
+% miss     - Missing data structure
+% dm       - Observed image dimensions
+% opt      - Options structure
+% use_uint - Store responsibilities as uint8 (default: single)
+% z        - Get a specific slice (default: all)
+% Z        - (Slice of) cluster responsibilities
+%
+% Compute (a slice of) responsibilities. Because the number of GMM clusters
+% can be quite large, full responsibilities can't be held in memory. We
+% thus recompute slices on the fly from its dependencies each time it is
+% needed. This slows things down but saves tremendous amounts of memory.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Parse inputs
 cluster = dat.gmm.cluster;

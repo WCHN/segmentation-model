@@ -1,4 +1,22 @@
 function [obs,dm,mat,vs,scl,V,C,mn,mx,nam] = get_obs(varargin)
+% FORMAT [obs,dm,mat,vs,scl,V,C,mn,mx,nam] = get_obs(dat, 'do_scl', ..., 'mask', ..., 'val', ...)
+% dat    - Subject's data structure (one subject)
+% do_scl - Apply a scaling factor to roughly align histograms
+% val    - Target mean value after scaling
+% mask   - Exclude values considered as missing (Nan, 0, odd CT values...)
+% obs    - Observed image
+% dm     - Image dimensions
+% mat    - Orientation matrix
+% vs     - Voxel size
+% scl    - Scaling factor applied
+% V      - spm_vol handle
+% C      - Number of channels
+% mn     - Minimum observed value per channel
+% mx     - Maximum observed value per channel
+%
+% Load observed image from disk + some post-processing + useful info
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Parse inputs
 %--------------------------------------------------------------------------

@@ -1,4 +1,16 @@
 function [gr,H,ll] = diff_template(a,Z,prop,opt)
+% FORMAT [gr,H,ll] = diff_template(a,Z,prop,opt)
+% a    - Current log-template warped in subject-space [Nx Ny Nz K]
+% Z    - Class responsibilities [Nx Ny Nz K]
+% prop - Tissue proportions
+% opt  - Options structure
+% gr   - Gradient [Nx Ny Nz K]
+% H    - Hessian [Nx Ny Nz K(K+1)/2]
+% ll   - Log-likelihood
+%
+% Compute derivatives of the log-template for a given subject.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Parameters
 dm      = [size(Z),1,1,1];
