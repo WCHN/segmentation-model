@@ -1,4 +1,14 @@
 function dat = init_mrf(dat,opt)
+% FORMAT dat = init_mrf(dat,opt)
+% dat   - Subjects data structure
+% opt   - Options structure
+%
+% Initialise Markov Random Field related variables:
+% * dat.mrf.G    - (Expected) "confusion" matrix
+% * dat.mrf.ElnG - (Expected) log-"confusion" matrix
+% * dat.mrf.w    - Additional weight accounting for voxel-size
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Parameters
 S0 = numel(dat);

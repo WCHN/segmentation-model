@@ -1,4 +1,18 @@
 function dat = init_bf(dat,opt,scl)
+% FORMAT dat = init_bf(dat,opt,[scl])
+% dat   - Subjects data structure
+% opt   - Options structure
+% scl   - Scaling of the data (that kind of aligns histograms)
+%
+% Init registration related variables:
+% * dat.bf.chan(:).C:       Bias precision matrix
+% * dat.bf.chan(:).B1/2/3:  DCT basis functions along each dimension
+% * dat.bf.chan(:).T:       Bias coordinates in DCT basis (all zero)
+%
+% The histogram scaling is converted to a component of the bias field.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
 biasreg  = opt.bf.biasreg;
 fwhm     = opt.bf.biasfwhm;
 

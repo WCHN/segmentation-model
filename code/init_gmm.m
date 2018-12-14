@@ -1,4 +1,13 @@
 function [dat,model,scl] = init_gmm(dat,model,opt)
+% FORMAT [dat,model,scl] = init_gmm(dat,model,opt)
+% dat   - Subjects data structure
+% model - Model structure
+% opt   - Options structure
+% scl   - 
+%
+% Initialise GMM parameters by fitting a GMM to the image histograms.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Parameters
 %--------------------------------------------------------------------------

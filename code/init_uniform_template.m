@@ -1,4 +1,16 @@
 function model = init_uniform_template(dat,opt)
+% FORMAT model = init_uniform_template(dat,opt)
+% dat   - Subjects data structure
+% opt   - Options structure
+% model - Model structure
+%
+% Initialise the template as "uniform"
+% -> Same value everywhere
+% -> Same probability for all classes
+% Create template files on disk
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
 K         = opt.template.K;
 dir_model = opt.dir_model;
 S0        = numel(dat);
