@@ -1,4 +1,11 @@
 function show_segmentations(dat,opt)
+% FORMAT show_segmentations(dat,opt)
+% dat - Subjects data structure
+% opt - Options structure
+%
+% Plot a selection of segmentations.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 figname = '(SPM) Segmentations';
 

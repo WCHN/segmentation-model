@@ -1,22 +1,30 @@
-function model = update_GaussPrior(dat,model,opt,do_update)
-if nargin < 4, do_update = true; end
+function model = update_GaussPrior(dat,model,opt)
+% FORMAT model = update_GaussPrior(dat,model,opt)
+% dat       - Subjects data structure
+% model     - Model structure
+% opt       - Options structure
+%
+% Update Gaussian Mixture priors
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
-dir_model   = opt.dir_model;
-verbose     = opt.gmm.hist.verbose;
-constrained = opt.gmm.GaussPrior.constrained;
-GaussPrior  = model.GaussPrior;
 
-S0          = numel(dat);
-populations = spm_json_manager('get_populations',dat);
-P           = numel(populations);
+dir_model   = opt.dir_model;                    % Directory were model file sare stored
+verbose     = opt.gmm.hist.verbose;             % Verbosity
+constrained = opt.gmm.GaussPrior.constrained;   % Constrain variances to be similar
+GaussPrior  = model.GaussPrior;                 % Prior parameters dictionary {mean df scale df}
+
+S0          = numel(dat);                       % Number of subjects
+populations = spm_json_manager('get_populations',dat); % list of populations
+P           = numel(populations);               % Number of populations
 
 %--------------------------------------------------------------------------
 % First we update for CT data, where all populations share the same GaussPrior
 %--------------------------------------------------------------------------
 
-clusters = {};  
-cnt      = 1;
-has_ct   = false;
+clusters = {};      % List of CT Gaussian parameters
+cnt      = 1;       % Number of CT scans
+has_ct   = false;   % Is there at least one CT population?
 
 for p=1:P % Iterate over populations
     population0 = populations{p}.name;
@@ -29,14 +37,14 @@ for p=1:P % Iterate over populations
     
     has_ct = true;
     
-    pr = GaussPrior(population0);
+    pr = GaussPrior(population0); % Previous CT priors
     
     % Get lkp
     for s=1:S0
         population = dat{s}.population;
 
         if strcmp(population0,population)
-            lkp = dat{s}.gmm.part.lkp;
+            lkp = dat{s}.gmm.part.lkp; % Map GMM cluster to Template classes
             break
         end
     end
@@ -53,7 +61,10 @@ end
 
 if has_ct
     [pr(1:4),extras] = spm_gmm_lib('UpdateHyperPars',clusters,pr(1:4), ...
-                                   'constrained',constrained,'figname','CT','verbose',verbose,'lkp',lkp);    
+                                   'constrained',constrained,...
+                                   'figname','CT',...
+                                   'verbose',verbose,...
+                                   'lkp',lkp);    
 
 
     lb_pr                  = pr{6};                                        
@@ -70,7 +81,7 @@ if has_ct
             continue
         end
 
-        GaussPrior(population0) = pr;
+        GaussPrior(population0) = pr; % Update population prior
     end
 end
 
@@ -112,7 +123,10 @@ for p=1:P % Iterate over populations
     end
 
     [pr(1:4),extras] = spm_gmm_lib('UpdateHyperPars',clusters,pr(1:4), ...
-                                   'constrained',constrained,'figname',population0,'verbose',verbose,'lkp',lkp);    
+                                   'constrained',constrained,...
+                                   'figname',population0,...
+                                   'verbose',verbose,...
+                                   'lkp',lkp);    
 
 
     lb_pr                  = pr{6};                                        
@@ -122,6 +136,10 @@ for p=1:P % Iterate over populations
 
     GaussPrior(population0) = pr;
 end
+
+%--------------------------------------------------------------------------
+% Save prior parameters dictionary
+%--------------------------------------------------------------------------
 
 fname = fullfile(dir_model,'GaussPrior.mat');
 save(fname,'GaussPrior');

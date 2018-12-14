@@ -1,4 +1,20 @@
 function model = compute_model_lb(dat,model,opt)
+% FORMAT model = compute_model_lb(dat,model,opt)
+% dat   - Subjects data structure
+% model - Model structure
+% opt   - Options structure
+%
+% Computes complete lower bound by summing its parts
+%
+% Uses:
+% * dat.lb.last
+% * model.template.objval.pr
+% * model.GaussPrior
+% * model.PropPrior.norm
+% * model.lb
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
 S0  = numel(dat);
 dlb = 0;
 for s=1:S0

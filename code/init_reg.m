@@ -1,4 +1,16 @@
 function [dat,opt] = init_reg(dat,opt)
+% FORMAT [dat,opt] = init_reg(dat,opt)
+% dat   - Subjects data structure
+% opt   - Options structure
+%
+% Init registration related variables:
+% * opt.reg.B:              Lie basis
+% * opt.reg.aff_reg_ICO:    Affine precision matrix
+% * dat.reg.r:              Affine coordinates in Lie algebra (all zero)
+% * dat.reg.v:              Create velocity nifti file on disk
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
 S0   = numel(dat);
 dm   = obs_info(dat{1});
 type = opt.reg.aff_type;

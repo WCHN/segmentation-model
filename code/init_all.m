@@ -1,4 +1,19 @@
 function [dat,model,opt] = init_all(dat,opt)
+% FORMAT [dat,model,opt] = init_all(dat,opt)
+% dat   - Subjects data structure
+% opt   - Options structure
+% model - Model structure
+%
+% * Build directory structure
+% * Init registration
+% * Init bias field parameters
+% * Init objective value structs, for tracking lower bounds
+% * Init Gauss-Newton step-size, which will change depending on convergence
+% * Init one Gaussian per tissue
+% * Init use of first-order MRF
+% * Init template from histogram representations of input images
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 [dat,opt] = build_dir_structure(dat,opt); % Build directory structure
 [dat,opt] = init_reg(dat,opt);            % Init registration

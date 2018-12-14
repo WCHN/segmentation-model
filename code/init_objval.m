@@ -1,4 +1,29 @@
 function [objval,dat] = init_objval(dat,P)
+% FORMAT [objval,dat] = init_objval(dat,[P])
+% dat    - Subjects data structure
+% P      - Number of populations
+% objval - 
+%
+% Initialise structure holding lower bound parts:
+% dat.lb.{
+%   sum      - Sum of all parts
+%   last     - Previous value of sum
+%   X        - Conditional log-likelihood E[lnp(X|...)]
+%   lnDetbf  - Normalising factor due to the bias field
+%   Z        - KL-divergence of labels
+%   MU       - KL-divergence of GMM mean
+%   A        - KL-divergence of GMM precision
+%   bf_reg   - Prior term of bias field
+%   aff_reg  - Prior term of affine reg
+%   v_reg    - Prior term of velocity
+%   lab      - 
+%   prop_reg - Prior term of tissue proportions
+%   mg       -
+%   ZN       -
+% }
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
 if nargin<2, P = 1; end
 
 objval          = struct;

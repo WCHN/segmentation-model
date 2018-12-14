@@ -1,4 +1,14 @@
 function dat = init_armijo(dat)
+% FORMAT dat = init_armijo(dat)
+% dat   - Subjects data structure
+% 
+% Initialise armijo factors for all Gauss-Newton updated variables:
+% * dat.armijo.bf
+% * dat.armijo.prop
+% * dat.armijo.nl
+% * dat.armijo.prop
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 S0 = numel(dat);
 for s=1:S0
     [~,~,~,C] = obs_info(dat{s});

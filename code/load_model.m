@@ -1,4 +1,12 @@
 function [dat,model,opt] = load_model(dat,opt)
+% FORMAT [dat,model,opt] = load_model(dat,opt)
+% dat   - Subjects data structure
+% opt   - Options structure
+% model - Model structure
+%
+% Load model from disk.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 S0    = numel(dat);
 model = cell(1,S0);

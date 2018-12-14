@@ -1,4 +1,27 @@
 function [dat,opt] = build_dir_structure(dat,opt)
+% FORMAT [dat,opt] = build_dir_structure(dat,opt)
+% dat   - Subjects data structure
+% opt   - Options structure
+% 
+% Build directory structure on disk to store all temporary variables:
+%
+% <dir_output_train>
+% |-- model
+% |-- vel
+% |-- a_der
+% |-- seg2d
+%
+% <dir_output_seg>
+% |-- <subject>
+% |   |-- seg
+% |   |   |-- orig
+% |   |   |-- final
+% |   |   |-- ml
+% |   |-- in-vel
+% |   |-- bf
+% |   |-- vel
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 if opt.template.do
     dir_output_train = opt.dir_output_train;
