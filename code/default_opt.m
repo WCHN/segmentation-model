@@ -14,156 +14,156 @@ function [opt,holly] = default_opt(opt)
 %
 % MODEL
 % -----
-% opt.model.it
-% opt.model.tol
-% opt.model.niter
-% opt.model.nam_cls
-% opt.model.clean_up
-% opt.model.PropPrior.do
+% opt.model.it           - Number of current VEM iterations
+% opt.model.tol          - Lower bound tolerance criterion
+% opt.model.niter        - Maximum number of VEM iterations
+% opt.model.nam_cls      - Names of Template classes
+% opt.model.clean_up     - Do clean up at the end
+% opt.model.PropPrior.do - Optimise prior on tissue proportions
 %
 % GMM
 % -----
-% opt.gmm.niter
-% opt.gmm.tol
-% opt.gmm.pth_GaussPrior
-% opt.gmm.pth_PropPrior
-% opt.gmm.hist.niter_main
-% opt.gmm.hist.niter_gmm
-% opt.gmm.hist.init_ix
-% opt.gmm.hist.verbose
-% opt.gmm.labels.cm
-% opt.gmm.labels.use
-% opt.gmm.labels.S
+% opt.gmm.niter           - Number of iterations in each GMM sub-loop
+% opt.gmm.tol             - Lower bound tolerance criterion
+% opt.gmm.pth_GaussPrior  - Path to GMM parameters file on disk
+% opt.gmm.pth_PropPrior   - Path to proportion parameters file on disk
+% opt.gmm.hist.niter_main - Number of iteration for initial histogram fitting
+% opt.gmm.hist.niter_gmm  - Number of sub-iterations
+% opt.gmm.hist.init_ix    - Map cluster indices to Template classes
+% opt.gmm.hist.verbose    - Verbosity level
+% opt.gmm.hist.verbose_gmm- Verbosity level in sub-loop 
+% opt.gmm.labels.cm       - Map manual labels to Template classes
+% opt.gmm.labels.use      - Use manual labels
+% opt.gmm.labels.S        - Rater sensitivity
+% opt.gmm.GaussPrior.constrained - Constrain class variance to be similar
+% opt.gmm.GaussPrior.verbose     - Verbosity when updating GMM prior
 %
 % TEMPLATE
 % -----
-% opt.template.do
-% opt.template.pth_template
-% opt.template.K
-% opt.template.vs
-% opt.template.reg0
-% opt.template.reg
-% opt.template.shrink
-% opt.template.load_a_der
-% opt.template.R
-% opt.template.sym
-% opt.template.niter
-% opt.template.verbose
-% opt.template.bg_class
-% opt.template.resize
-% opt.template.keep_neck
+% opt.template.do           - Update template
+% opt.template.pth_template - Path to template file on disk
+% opt.template.K            - Number of template classes
+% opt.template.vs           - Template voxel size
+% opt.template.reg0         - Base regularisation parameter
+% opt.template.reg          - Decreasing regularisation parameters
+% opt.template.shrink       - Crop template to bounding box of data
+% opt.template.load_a_der   - Read and write derivatives on disk
+% opt.template.R            - Rotation matrix towards null space
+% opt.template.sym          - Force symmetric template
+% opt.template.niter        - Number of Gauss-Newton iterations
+% opt.template.verbose      - Verbosity level
+% opt.template.bg_class     - Label of background class
+% opt.template.resize       - 
+% opt.template.keep_neck    - Keep or remove neck region
 %
 % REGISTRATION
 % ------------
-% opt.reg.rparam0
-% opt.reg.rparam
-% opt.reg.rparam
-% opt.reg.int_args
-% opt.reg.niter
-% opt.reg.tol
-% opt.reg.strt_nl
-% opt.reg.mc_aff
-% opt.reg.aff_type
-% opt.reg.aff_reg
-% opt.reg.do_aff
-% opt.reg.do_nl
-% opt.reg.nit_init_aff
+% opt.reg.rparam0       - Base regularisation parameter
+% opt.reg.rparam        - Decresing regularisation parameters
+% opt.reg.int_args      - Number of integration steps
+% opt.reg.niter         - Number of Gauss-Newton iteratons
+% opt.reg.tol           - Lower bound tolerance criterion
+% opt.reg.strt_nl       - Iteration at which to start optimising non-linear warps
+% opt.reg.mc_aff        - 
+% opt.reg.aff_type      - Type of affine transformation ['translation','rotation','rigid','similitude','affine']
+% opt.reg.aff_reg       - Regularisation of affine transformation
+% opt.reg.do_aff        - Optimise affine transform?
+% opt.reg.do_nl         - Optimise non-linear warp?
+% opt.reg.nit_init_aff  - 
 % opt.reg.init_aff_tol
 %
 % SEGMENTATION
 % ------------
-% opt.seg.niter     
-% opt.seg.tol            
-% opt.seg.show         
-% opt.seg.samp       
-% opt.seg.bg           
-% opt.seg.mrf.ml      
-% opt.seg.mrf.val_diag 
-% opt.seg.mrf.alpha    
+% opt.seg.niter         - Maximum number of segmentation sub-iterations
+% opt.seg.tol           - Lower bound tolerance criterion
+% opt.seg.show          - Plot lower bound and images
+% opt.seg.samp          - Sample a subset of voxels (makes everything faster)
+% opt.seg.bg            - Background class
+% opt.seg.mrf.ml        - 
+% opt.seg.mrf.val_diag  - Value on the diagonal of the MRF confusion matrix
+% opt.seg.mrf.alpha     -
 %
 % BIAS FIELD
 % ----------
-% opt.bf.biasfwhm   
-% opt.bf.niter        
-% opt.bf.tol         
-% opt.bf.mc_bf       
-% opt.bf.biasreg    
-% opt.bf.do            
-% opt.bf.mc_bf_verbose 
+% opt.bf.biasfwhm       - Full-width half max of the smallest basis function
+% opt.bf.niter          - Maximum number of Gauss-Newton iterations
+% opt.bf.tol            - Lower bound tolerance criterion
+% opt.bf.mc_bf          - 
+% opt.bf.biasreg        - Regularisation parameter
+% opt.bf.do             - Optimise bias field?
+% opt.bf.mc_bf_verbose  - 
 %
-% PROPROTIONS
-% -----------
-% opt.prop.niter 
-% opt.prop.tol      
-% opt.prop.reg  
-% opt.prop.do   
+% TISSUE PROPORTIONS
+% ------------------
+% opt.prop.niter        - Maximum number of Gauss-Newton iterations
+% opt.prop.tol          - Lower bound tolerance criterion
+% opt.prop.reg          - Initial regularisation parameter
+% opt.prop.do           - Optimise tissue proportions?
 %
 % LINE SEARCH
 % -----------
-% opt.nline_search.bf  
-% opt.nline_search.aff  
-% opt.nline_search.nl   
-% opt.nline_search.prop 
+% opt.nline_search.bf   - Number of line-search iterations for bias field
+% opt.nline_search.aff  - Number of line-search iterations for affine
+% opt.nline_search.nl   - Number of line-search iterations for non-linear
+% opt.nline_search.prop - Number of line-search iterations for proportions
 %
 % CLEANING
 % --------
-% opt.clean.brain
-% opt.clean.mrf         
-% opt.clean.mrf.do      
-% opt.clean.mrf.strength 
-% opt.clean.mrf.niter
-% opt.clean.les      
-% opt.clean.les.bwlabeln 
-% opt.clean.les.val    
-% opt.clean.les.class 
-% opt.clean.les.cnn_mrf.do    
-% opt.clean.les.cnn_mrf.lkp   
-% opt.clean.les.cnn_mrf.pth_net
+% opt.clean.brain               -
+% opt.clean.mrf.do              - Post-processing using linear MRF
+% opt.clean.mrf.strength        -
+% opt.clean.mrf.niter           - Number of post MRF iterations
+% opt.clean.les.bwlabeln        -
+% opt.clean.les.val             -
+% opt.clean.les.class           -
+% opt.clean.les.cnn_mrf.do      - Post-processing lesions using CNN-MRF
+% opt.clean.les.cnn_mrf.lkp     - 
+% opt.clean.les.cnn_mrf.pth_net - Path to CNN file on disk
 %
 % STARTING ITERATION
 % ------------------
-% opt.start_it.do_mg   
-% opt.start_it.do_prop 
-% opt.start_it.do_upd_mrf 
+% opt.start_it.do_mg        - 
+% opt.start_it.do_prop      - Iteration at which to start optimising proportions
+% opt.start_it.do_upd_mrf   - Iteration at which to start optimising MRF weights
 %
 % ACTIVATE/DEACTIVATE
 % -------------------
-% opt.do.mg
-% opt.do.update_mrf 
-% opt.do.mrf
+% opt.do.mg             -
+% opt.do.update_mrf     - Update MRF weights
+% opt.do.mrf            - Use MRF prior in segmentation model
 %
 % CT-SPECIFIC
 % -----------
-% opt.ct.GaussPrior
+% opt.ct.GaussPrior     - GMM prior for CT
 %
 % LESIONS
 % -------
-% opt.lesion.hemi
+% opt.lesion.hemi       - Split lesion class between hemispheres
 %
 % FILES TO WRITE
 % --------------
-% opt.write.tc
-% opt.write.bf
-% opt.write.df
-% opt.write.ml
-% opt.write.les
-% opt.dir_output_train
-% opt.dir_output_seg
+% opt.write.tc          - 
+% opt.write.bf          - Write bias field?
+% opt.write.df          - 
+% opt.write.ml          - Write maximum-likelihood labels?
+% opt.write.les         - Write lesion masks?
+% opt.dir_output_train  - Folder to write model (= population) data
+% opt.dir_output_seg    - Folder to write segmentation (= subject) data
 %
 % DICTIONARIES
 % ------------
-% opt.dict.lkp
-% opt.dict.prop_exc
+% opt.dict.lkp          - Mapping between GMM clusters and Template classes
+% opt.dict.prop_exc     - 
 %
 % VERBOSITY
 % ---------
-% opt.verbose.level
-% opt.verbose.model;
-% opt.verbose.gmm
-% opt.verbose.reg
-% opt.verbose.bf
-% opt.verbose.prop
-% opt.verbose.mrf
+% opt.verbose.level     -
+% opt.verbose.model     - 
+% opt.verbose.gmm       -
+% opt.verbose.reg       -
+% opt.verbose.bf        -
+% opt.verbose.prop      -
+% opt.verbose.mrf       -
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
