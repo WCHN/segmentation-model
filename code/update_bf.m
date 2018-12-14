@@ -1,20 +1,33 @@
 function [dat,bf] = update_bf(dat,obs,bf,template,dm,labels,miss,opt)
+% FORMAT [dat,bf] = update_bf(dat,obs,bf,template,dm,labels,miss,opt)
+% dat      - Subject's data structure (one subject)
+% obs      - Observed image
+% bf       - Bias fields
+% template - Warped + softmaxed template
+% dm       - Image dimensions
+% labels   - Manual labels
+% miss     - Missing data structure
+% opt      - Options structure
+%
+% Update bias fields, one at a time, by Gauss-Newton optimisation.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % Parse input
-chan    = dat.bf.chan;
-cluster = dat.gmm.cluster;
-prop    = dat.gmm.prop;
-armijo  = dat.armijo.bf;
-verbose = opt.verbose.bf;
-part    = dat.gmm.part;
+chan    = dat.bf.chan;      % Bias field encoding (C,B1,B2,B3,T)
+cluster = dat.gmm.cluster;  % GMM posterior parameters
+prop    = dat.gmm.prop;     % Tissue proportions
+armijo  = dat.armijo.bf;    % Previous armijo factor
+verbose = opt.verbose.bf;   % Verbosity level
+part    = dat.gmm.part;     % Clusters to template mapping (lkp,mg)
 
 % Parameters
-kron   = @(a,b) spm_krutil(a,b);
+kron   = @(a,b) spm_krutil(a,b); % Redefine kronecker product
 [MU,A] = get_mean_prec(cluster); % Get means and precisions
-K      = size(MU,2);
-C      = numel(chan);
-const  = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
-ix_tiny = get_par('ix_tiny',dat.population,part.lkp,opt);
+K      = size(MU,2);             % Number of clusters
+C      = numel(chan);            % Number of chqnnels
+const  = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L); % GMM likelihood norm
+ix_tiny = get_par('ix_tiny',dat.population,part.lkp,opt);      % Labels to template mapping
 
 for c=1:C % Loop over channels
 
