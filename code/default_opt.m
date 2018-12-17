@@ -18,7 +18,7 @@ function [opt,holly] = default_opt(opt)
 % opt.model.tol          - Lower bound tolerance criterion
 % opt.model.niter        - Maximum number of VEM iterations
 % opt.model.nam_cls      - Names of Template classes
-% opt.model.clean_up     - Do clean up at the end
+% opt.model.clean_up     - Delete temporary files at end of write_results()
 % opt.model.PropPrior.do - Optimise prior on tissue proportions
 %
 % GMM
@@ -50,11 +50,15 @@ function [opt,holly] = default_opt(opt)
 % opt.template.load_a_der   - Read and write derivatives on disk
 % opt.template.R            - Rotation matrix towards null space
 % opt.template.sym          - Force symmetric template
-% opt.template.niter        - Number of Gauss-Newton iterations
+% opt.template.niter        - Number of Gauss-Newton iterations, will only
+%                             iterate if opt.template.load_a_der = false
 % opt.template.verbose      - Verbosity level
-% opt.template.bg_class     - Label of background class
-% opt.template.resize       - 
-% opt.template.keep_neck    - Keep or remove neck region
+% opt.template.bg_class     - Label of air background class, used as outside FOV 
+%                             prior when warping template (see init_template.bg)
+% opt.template.resize       - Crops the template to FOV of the default SPM
+%                             template using resize_template()
+% opt.template.keep_neck    - Keep or remove neck region in
+%                             resize_template()
 %
 % REGISTRATION
 % ------------
@@ -64,34 +68,37 @@ function [opt,holly] = default_opt(opt)
 % opt.reg.niter         - Number of Gauss-Newton iteratons
 % opt.reg.tol           - Lower bound tolerance criterion
 % opt.reg.strt_nl       - Iteration at which to start optimising non-linear warps
-% opt.reg.mc_aff        - 
+% opt.reg.mc_aff        - Mean correct affine parameters
 % opt.reg.aff_type      - Type of affine transformation ['translation','rotation','rigid','similitude','affine']
 % opt.reg.aff_reg       - Regularisation of affine transformation
 % opt.reg.do_aff        - Optimise affine transform?
 % opt.reg.do_nl         - Optimise non-linear warp?
-% opt.reg.nit_init_aff  - 
-% opt.reg.init_aff_tol
+% opt.reg.nit_init_aff  - Number of iteration for initial affine
+%                         registration of template to subject
+% opt.reg.init_aff_tol  - Tolerance for initial affine registration of template to subject
 %
 % SEGMENTATION
 % ------------
-% opt.seg.niter         - Maximum number of segmentation sub-iterations
+% opt.seg.niter         - Maximum number of subject segmentation sub-iterations
 % opt.seg.tol           - Lower bound tolerance criterion
 % opt.seg.show          - Plot lower bound and images
 % opt.seg.samp          - Sample a subset of voxels (makes everything faster)
-% opt.seg.bg            - Background class
-% opt.seg.mrf.ml        - 
+% opt.seg.bg            - Outside of brain classes, e.g., air, soft tissue and
+%                         skull. Used when doing ad-hoc clean-up in
+%                         clean_brain().
+% opt.seg.mrf.ml        - ML or VB MRF update
 % opt.seg.mrf.val_diag  - Value on the diagonal of the MRF confusion matrix
-% opt.seg.mrf.alpha     -
+% opt.seg.mrf.alpha     - Parameter of VB MRF
 %
 % BIAS FIELD
 % ----------
 % opt.bf.biasfwhm       - Full-width half max of the smallest basis function
 % opt.bf.niter          - Maximum number of Gauss-Newton iterations
 % opt.bf.tol            - Lower bound tolerance criterion
-% opt.bf.mc_bf          - 
+% opt.bf.mc_bf          - Do population-wise mean correction of bias field
 % opt.bf.biasreg        - Regularisation parameter
 % opt.bf.do             - Optimise bias field?
-% opt.bf.mc_bf_verbose  - 
+% opt.bf.mc_bf_verbose  - Verbose when population-wise mean correcting of bias field
 %
 % TISSUE PROPORTIONS
 % ------------------
@@ -109,26 +116,27 @@ function [opt,holly] = default_opt(opt)
 %
 % CLEANING
 % --------
-% opt.clean.brain               -
+% opt.clean.brain               - Do ad-hock brain clean-up with clean_brain()
 % opt.clean.mrf.do              - Post-processing using linear MRF
-% opt.clean.mrf.strength        -
+% opt.clean.mrf.strength        - Diagonal value of linear MRF
 % opt.clean.mrf.niter           - Number of post MRF iterations
-% opt.clean.les.bwlabeln        -
-% opt.clean.les.val             -
-% opt.clean.les.class           -
+% opt.clean.les.bwlabeln        - Try to extract lesion by connected
+%                                 components
+% opt.clean.les.val             - Probablity threshold for lesion class
+% opt.clean.les.class           - The tissue class containing lesion
 % opt.clean.les.cnn_mrf.do      - Post-processing lesions using CNN-MRF
-% opt.clean.les.cnn_mrf.lkp     - 
 % opt.clean.les.cnn_mrf.pth_net - Path to CNN file on disk
 %
 % STARTING ITERATION
 % ------------------
-% opt.start_it.do_mg        - 
+% opt.start_it.do_mg        - Iteration at when to introduce multiple
+%                             Gaussians per tissue
 % opt.start_it.do_prop      - Iteration at which to start optimising proportions
 % opt.start_it.do_upd_mrf   - Iteration at which to start optimising MRF weights
 %
 % ACTIVATE/DEACTIVATE
 % -------------------
-% opt.do.mg             -
+% opt.do.mg             - Use more than one Gaussian per tissue
 % opt.do.update_mrf     - Update MRF weights
 % opt.do.mrf            - Use MRF prior in segmentation model
 %
@@ -142,9 +150,19 @@ function [opt,holly] = default_opt(opt)
 %
 % FILES TO WRITE
 % --------------
-% opt.write.tc          - 
-% opt.write.bf          - Write bias field?
-% opt.write.df          - 
+% opt.write.tc          - Write various segmentations:
+%                         tc(1:K,1): Subject space responsibilities
+%                         tc(1:K,2): Subject space responsibilities, post
+%                         processed
+%                         tc(1:K,3): Template space responsibilities, post
+%                         processed
+% opt.write.bf          - Write bias field:
+%                         bf(1): Bias field corrected image in subject
+%                         space
+%                         bf(2): Bias field
+%                         bf(3): Bias field corrected image in template
+%                         space
+% opt.write.df          - Write initial velocities?
 % opt.write.ml          - Write maximum-likelihood labels?
 % opt.write.les         - Write lesion masks?
 % opt.dir_output_train  - Folder to write model (= population) data
@@ -153,17 +171,24 @@ function [opt,holly] = default_opt(opt)
 % DICTIONARIES
 % ------------
 % opt.dict.lkp          - Mapping between GMM clusters and Template classes
-% opt.dict.prop_exc     - 
+% opt.dict.prop_exc     - Classes to force responsibilities to zero, e.g, 
+%                         prop_exc = [0 0 1 0], forces the responsibilities
+%                         of class 3 to zero. Good when a population has
+%                         lesions and one population does not.
 %
 % VERBOSITY
 % ---------
-% opt.verbose.level     -
-% opt.verbose.model     - 
-% opt.verbose.gmm       -
-% opt.verbose.reg       -
-% opt.verbose.bf        -
-% opt.verbose.prop      -
-% opt.verbose.mrf       -
+% opt.verbose.level     - Set overall verbosity of algorithm:
+%                         0: No verbose at all
+%                         1: Only printed verbose
+%                         2: Printed verbose + graphics
+% opt.verbose.model     - Population-wise verbose, e.g., template, global
+%                         tissue prior
+% opt.verbose.gmm       - Subject GMM verbose
+% opt.verbose.reg       - Subject registration verbose
+% opt.verbose.bf        - Subject bias field verbose
+% opt.verbose.prop      - Subject tissue proportion verbose
+% opt.verbose.mrf       - Subject MRF verbose
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
@@ -529,9 +554,6 @@ if ~isfield(opt.clean.les,'cnn_mrf')
 end
 if ~isfield(opt.clean.les.cnn_mrf,'do')
     opt.clean.les.cnn_mrf.do      = false;
-end
-if ~isfield(opt.clean.les.cnn_mrf,'lkp')
-    opt.clean.les.cnn_mrf.lkp     = [];
 end
 if ~isfield(opt.clean.les.cnn_mrf,'pth_net')
     opt.clean.les.cnn_mrf.pth_net = '';
