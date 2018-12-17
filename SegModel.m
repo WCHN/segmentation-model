@@ -81,7 +81,7 @@ for it_mod=1:opt.model.niter
     dat = meancorrect_aff(dat,opt);
 
     % Mean correct bias field (also updates posteriors)
-    dat = meancorrect_bf(dat,model.GaussPrior,opt,it_mod);          
+    dat = meancorrect_bf(dat,model.GaussPrior,opt);          
 
     % Update template	    
     model = update_template(dat,model,opt);           
