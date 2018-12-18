@@ -87,7 +87,7 @@ for it_mod=1:opt.model.niter
     model = update_template(dat,model,opt);           
 
     % Update Gauss-Wishart hyper-parameters	    
-    model = update_GaussPrior(dat,model,opt,it_mod); 
+    model = update_GaussPrior(dat,model,opt); 
 
     % Update proportions hyper-parameter
     model = update_PropPrior(dat,model,opt,it_mod);
