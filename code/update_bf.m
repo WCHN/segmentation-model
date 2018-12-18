@@ -22,14 +22,16 @@ verbose = opt.verbose.bf;   % Verbosity level
 part    = dat.gmm.part;     % Clusters to template mapping (lkp,mg)
 
 % Parameters
-kron   = @(a,b) spm_krutil(a,b); % Redefine kronecker product
-[MU,A] = get_mean_prec(cluster); % Get means and precisions
-K      = size(MU,2);             % Number of clusters
-C      = numel(chan);            % Number of chqnnels
-const  = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L); % GMM likelihood norm
-ix_tiny = get_par('ix_tiny',dat.population,part.lkp,opt);      % Labels to template mapping
+kron             = @(a,b) spm_krutil(a,b); % Redefine kronecker product
+cluster_scale    = cluster{2}{1};
+cluster_scale_df = cluster{2}{2};
+cluster_mean     = cluster{1}{1};
+nb_clusters = size(cluster_mean,2);   % Number of clusters
+nb_channels = numel(chan);            % Number of channels
+const       = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L); % GMM likelihood norm
+ix_tiny     = get_par('ix_tiny',dat.population,part.lkp,opt);      % Labels to template mapping
 
-for c=1:C % Loop over channels
+for c=1:nb_channels % Loop over channels
 
     if armijo(c) < 1e-6
         % Already found optimal solution
@@ -50,15 +52,21 @@ for c=1:C % Loop over channels
     %----------------------------------------------------------------------
     
     d3 = numel(chan(c).T); % Number of DCT parameters
-    H  = zeros(d3,d3); % Second derivatives
-    gr = zeros(d3,1);  % First derivatives    
+    H  = zeros(d3,d3);     % Second derivatives w.r.t. DC coefficients
+    gr = zeros(d3,1);      % First derivatives w.r.t. DC coefficients 
     
     for z=1:dm(3) % Loop over slices
         
         % Get slices
         [slice,ix] = gmm_img('getslice',z,dm,obs,bf,template,miss.C,labels);
+        % slice.obs
+        % slice.bf
+        % slice.template
+        % slice.code
+        % slice.bin_var
+        % slice.labels
 
-        if dat.mrf.do && numel(lnPzN) > K           
+        if dat.mrf.do && numel(lnPzN) > nb_clusters           
             lnPzNz = double(lnPzN(ix,:));
         else
             lnPzNz = lnPzN;
@@ -74,40 +82,93 @@ for c=1:C % Loop over channels
         % Compute sufficient statistics 
         mom = gmm_img('slice_mom',mom,Z,slice,miss,BX);
         
-        % Get mask 
-        msk = isfinite(sum(slice.obs,2));
-                
-        % Check to see if there are observations in this slice
-        nm = nnz(msk);
-        if nm == 0, continue; end            
+        slice_grad = zeros(dm(1:2));
+        slice_hess = zeros(dm(1:2));
         
-        % Get observations
-        cr = cell(C,1);
-        for c1=1:C % Loop over channels
-            cr{c1} = BX(msk,c1); 
-        end
+        % -----------------------------------------------------------------
+        % For each combination of missing voxels
+        for i=1:miss.nL
 
-        % Compute derivatives
-        w1 = zeros(nm,1);
-        w2 = zeros(nm,1);
-        for k=1:K % Loop over classes                
-            w0  = zeros(nm,1);
-            for c1=1:C % Loop over channels
-                w0 = w0 + A(c1,c,k)*(MU(c1,k) - cr{c1});
+            % -------------------------------------------------------------
+            % Get mask of missing modalities (with this particular code)
+            code              = miss.L(i);
+            observed_channels = spm_gmm_lib('code2bin', code, nb_channels);
+            missing_channels  = ~observed_channels;
+            if missing_channels(c), continue; end
+            if isempty(slice.code), selected_voxels = ones(size(slice.code), 'logical');
+            else,                   selected_voxels = (slice.code == code);
             end
-            w1  = w1 + Z(msk,k).*w0;
-            w2  = w2 + Z(msk,k)*A(c,c,k);
+            nb_channels_missing  = sum(missing_channels);
+            nb_voxels_coded      = sum(selected_voxels);
+            if nb_voxels_coded == 0, continue; end
+
+            % -------------------------------------------------------------
+            % Convert channel indices to observed indices
+            mapped_c     = 1:nb_channels;
+            mapped_c     = mapped_c(observed_channels);
+            mapped_c     = find(mapped_c == c);
+            cc           = mapped_c; % short alias
+            
+            selected_obs = BX(selected_voxels,observed_channels);
+            gi = 0; % Gradient accumulated accross clusters
+            Hi = 0; % Hessian accumulated accross clusters
+            for k=1:nb_clusters
+
+                % ---------------------------------------------------------
+                % Compute expected precision (see GMM+missing data)
+                Voo = cluster_scale(observed_channels,observed_channels,k);
+                Vom = cluster_scale(observed_channels,missing_channels,k);
+                Vmm = cluster_scale(missing_channels,missing_channels,k);
+                Vmo = cluster_scale(missing_channels,observed_channels,k);
+                Ao  = Voo - Vom*(Vmm\Vmo);
+                Ao  = (cluster_scale_df(k)-nb_channels_missing) * Ao;
+                MUo = cluster_mean(observed_channels,k);
+
+                % ---------------------------------------------------------
+                % Compute statistics
+                gk = bsxfun(@minus, selected_obs, MUo.') * Ao(cc,:).';
+                Hk = Ao(cc,cc);
+                
+                selected_resp = Z(selected_voxels,k);
+                gk = bsxfun(@times, gk, selected_resp);
+                Hk = bsxfun(@times, Hk, selected_resp);
+                clear selected_resp
+
+                % ---------------------------------------------------------
+                % Accumulate across clusters
+                gi = gi + gk;
+                Hi = Hi + Hk;
+                clear sk1x sk2x
+            end
+            
+            % -------------------------------------------------------------
+            % Deal with binning uncertainty
+            binvar = 0;
+            if numel(slice.bin_var) > 1
+                binvar = slice.bin_var(selected_voxels,c);
+            end
+                
+            % -------------------------------------------------------------
+            % Multiply with bias corrected value (chain rule)
+            gi = gi .* selected_obs(:,cc);
+            Hi = Hi .* (selected_obs(:,cc).^2 + binvar);
+            clear selected_obs binvar
+            
+            % -------------------------------------------------------------
+            % Normalisation term
+            gi = gi - 1;
+            
+            % -------------------------------------------------------------
+            % Accumulate across missing codes
+            slice_grad(selected_voxels) = slice_grad(selected_voxels) + gi;
+            slice_hess(selected_voxels) = slice_hess(selected_voxels) + Hi;
+            clear selected_voxels
         end
-        wt1       = zeros(dm(1:2));
-        wt1(msk) = -(1 + cr{c}.*w1); % US eq. 34 (gradient)
-        wt2       = zeros(dm(1:2));
-        wt2(msk) = cr{c}.*cr{c}.*w2 + 1; % Simplified Hessian of US eq. 34
-        clear cr
 
         b3 = chan(c).B3(z,:)';
-        gr = gr + kron(b3,spm_krutil(wt1,chan(c).B1,chan(c).B2,0));
-        H  = H  + kron(b3*b3',spm_krutil(wt2,chan(c).B1,chan(c).B2,1));
-        clear wt1 wt2 b3 Z msk
+        gr = gr + kron(b3,spm_krutil(slice_grad,chan(c).B1,chan(c).B2,0));
+        H  = H  + kron(b3*b3',spm_krutil(slice_hess,chan(c).B1,chan(c).B2,1));
+        clear slice_grad slice_hess b3 Z msk
 
     end % <-- Loop over slices
 
@@ -191,8 +252,8 @@ if verbose >= 3
 end
             
 % Get DC component
-dc.ln = zeros(1,C);
-for c=1:C
+dc.ln = zeros(1,nb_channels);
+for c=1:nb_channels
     dc.ln(c) = chan(c).T(1,1,1);
 end
 dc.int = scl_from_bf(chan);

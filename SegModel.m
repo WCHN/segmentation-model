@@ -87,7 +87,7 @@ for it_mod=1:opt.model.niter
     model = update_template(dat,model,opt);           
 
     % Update Gauss-Wishart hyper-parameters	    
-    model = update_GaussPrior(dat,model,opt,it_mod); 
+    model = update_GaussPrior(dat,model,opt); 
 
     % Update proportions hyper-parameter
     model = update_PropPrior(dat,model,opt,it_mod);
@@ -157,18 +157,42 @@ function dat = SegModel_init(dat,opt)
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
-if ~isfield(opt.dep,'aux_toolbox')
-    error('~isfield(opt.dep,''aux_toolbox'')')
-else
+% ---
+% SPM
+if ~isfield(opt.dep, 'spm') || isempty(opt.dep.spm)
+    opt.dep.spm = fileparts(which('spm'));
+end
+if (exist(opt.dep.spm, 'dir')==7)
+    if ~isdeployed
+        addpath(opt.dep.spm);
+        addpath(fullfile(opt.dep.spm,'toolbox','Shoot'));
+        addpath(fullfile(opt.dep.spm,'toolbox','Longitudinal'));
+    end
+end
+if ~(exist('spm','file') == 2)
+    error('SPM is not on the MATLAB path.'); 
+end
+
+% -------------------
+% auxiliary-functions
+if isfield(opt.dep,'aux_toolbox') && (exist(opt.dep.aux_toolbox, 'dir')==7)
     if ~isdeployed, addpath(opt.dep.aux_toolbox);  end
 end
-
-if ~isfield(opt.dep,'dist_toolbox')
-    error('~isfield(opt.dep,''dist_toolbox'')')
-else
-    if ~isdeployed, addpath(opt.dep.dist_toolbox); end
+if ~(exist('spm_gmm','file') == 2)
+    error('The "auxiliary" toolbox is not on the MATLAB path.'); 
 end
 
+% ------------------
+% distribute-toolbox
+if isfield(opt.dep,'dist_toolbox') && (exist(opt.dep.dist_toolbox, 'dir')==7)
+    if ~isdeployed, addpath(opt.dep.dist_toolbox); end
+end
+if ~(exist('distribute','file') == 2)
+    error('The "distribute" toolbox is not on the MATLAB path.'); 
+end
+
+% -------
+% CNN-MRF
 if isfield(opt,'clean') && isfield(opt.clean,'cnn_mrf') && isfield(opt.clean.cnn_mrf,'do')
     if opt.clean.cnn_mrf.do
         if ~isfield(opt.dep,'cnn_mrf')
@@ -179,10 +203,16 @@ if isfield(opt,'clean') && isfield(opt.clean,'cnn_mrf') && isfield(opt.clean.cnn
     end
 end
 
+% ------------
+% subfunctions
 if ~isdeployed, addpath(fullfile(fileparts(mfilename('fullpath')),'code')); end
 
+% -------
+% globals
 set_globals;
 
+% --------------
+% data structure
 if ischar(dat)
     dat = spm_json_manager('init_dat',dat);
     if ~(isfield(opt,'template') && isfield(opt.template,'do') && opt.template.do)
