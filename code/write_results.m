@@ -189,7 +189,7 @@ if opt.clean.brain
     [Z,msk_les] = clean_brain(Z,model,y,opt);
 end
 
-if opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.do
+if isempty(opt.lesion.hemi) && (opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.do)
     % Try to extract binary lesion representation from lesion class of responsibilities
     
     % Get lesion class
