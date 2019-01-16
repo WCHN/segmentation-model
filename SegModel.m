@@ -104,6 +104,7 @@ for it_mod=1:opt.model.niter
     % Some verbose
     if opt.verbose.model >= 2, plot_model_lb(dat,model,it_mod,opt); end
     if opt.verbose.model >= 3, show_segmentations(dat,opt); end
+    if opt.verbose.model >= 3, show_registration(dat,opt); end
     
     % Save some variables
     fname = fullfile(opt.dir_model,'dat.mat');
