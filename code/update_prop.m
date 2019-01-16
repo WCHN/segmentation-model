@@ -17,22 +17,19 @@ if numel(alpha) < numel(prop)
     alpha = padarray(alpha, [0 numel(prop) - numel(alpha)], 'post', 'replicate');
 end
     
-if armijo < 1e-6
-    % Already found optimal solution
-    dat.armijo.prop = min(armijo*1.25,1);
-    
-    return; 
-end
+% if armijo < 1e-6
+%     % Already found optimal solution
+%     dat.armijo.prop = min(armijo*1.25,1);
+%     
+%     return; 
+% end
 
 %--------------------------------------------------------------------------
 % GN loop
 %--------------------------------------------------------------------------
 
-for gn=1:opt.prop.niter 
+for gn=1:opt.prop.gnniter 
     
-    % Init
-%     [dlb,mom] = gmm_img('init_lb_and_mom',miss);
-
     % Neighborhood part
     lnPzN = gmm_mrf('apply',dat.mrf);
 
@@ -49,11 +46,7 @@ for gn=1:opt.prop.niter
         end
     
         % Compute responsibilities and lb
-%         [Z,dlb,BX] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny,dlb);
-        Z = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny);
-        
-%         % Compute sufficient statistics 
-%         mom = gmm_img('slice_mom',mom,Z,slice,miss,BX);    
+        Z = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny);      
         
         % Map cluster responsibilities to tissue responsibilities
         Z = cluster2template(Z,part);   
@@ -68,22 +61,6 @@ for gn=1:opt.prop.niter
         sumPi  = sumPi + dsumPi;
         sumPi2 = sumPi2 + dsumPi2;
     end    
-
-%     lbX = spm_gmm_lib('MarginalSum', mom.SS0, mom.SS1, mom.SS2, cluster{1}, cluster{2}, miss.L, mom.SS2b);    
-% 
-%     dat.lb.X(end + 1)       = lbX;     
-%     dat.lb.Z(end + 1)       = dlb.Z; 
-%     if numel(part.mg) > numel(prop)
-%         dat.lb.mg(end + 1)  = dlb.mg;   
-%     end
-%     if ~isempty(labels)
-%         dat.lb.lab(end + 1) = dlb.lab;
-%     end
-%     if dat.mrf.do   
-%         dat.lb.ZN(end + 1)  = gmm_mrf('lowerbound',dat.mrf);
-%     end
-% 
-%     dat.lb = check_convergence('gmm',dat.lb,1,opt.verbose.prop);
     
     p  = spm_matcomp('softmax',prop);    
     p2 = p'*p;
@@ -96,28 +73,25 @@ for gn=1:opt.prop.niter
 
     % ---------------------------------------------------------------------
     % GN step
-    dw = H\g';
-    dw = dw';
+    Update = H\g';
+    Update = Update';
 
     % ---------------------------------------------------------------------
     % Line search    
-    oprop  = prop;    
+    oprop     = prop;   
+    oprop_reg = sum((alpha - 1) .* log(spm_matcomp('softmax',oprop) + eps));
     for line_search=1:opt.nline_search.prop
 
-        prop = oprop - armijo * dw;
+        % GN step
+        prop = oprop - armijo * Update;
         
-        prop_reg = sum((alpha - 1) .* log(spm_matcomp('softmax',prop)));
-        
-        nlb = prop_reg;
-        nlb = nlb + dat.lb.lab(end) + dat.lb.X(end) ...
-              + dat.lb.MU(end) + dat.lb.A(end) + dat.lb.v_reg(end) ...
-              + dat.lb.aff_reg(end) + sum(dat.lb.bf_reg(end,:)) + dat.lb.lnDetbf(end) + dat.lb.mg(end) + dat.lb.ZN(end);                        
+        % Prior part of lower bound
         prop_reg = sum((alpha - 1) .* log(spm_matcomp('softmax',prop) + eps));
 
-        [dlb,~,dat.mrf] = gmm_img('img_lb_and_mom',obs,bf,[],template,labels,prop,cluster{1},cluster{2},miss,part,dm,dat.mrf,ix_tiny,{'prop',oprop});                      
-        nlb             = nlb + dlb.Z;             
+        % Z part of lower bound
+        [dlb,~,dat.mrf] = gmm_img('img_lb_and_mom',obs,bf,[],template,labels,prop,cluster{1},cluster{2},miss,part,dm,dat.mrf,ix_tiny,{'prop',oprop});                               
 
-        if nlb > dat.lb.last
+        if (dlb.Z + prop_reg) > (dat.lb.Z(end) + oprop_reg)
             armijo = min(armijo*1.25,1);
             
             dat.lb.Z(end + 1)        = dlb.Z;  

@@ -31,17 +31,7 @@ miss = get_par('missing_struct',obs);
 do_bf = opt.bf.do && strcmpi(modality,'MRI'); % Update bias-field?
 if do_bf
     % Compute bias-field
-    bf = get_bf(dat.bf.chan,dm_s);    
-         
-    if opt.bf.mc_bf && it_mod > 1
-        % Bias field has been mean corrected -> adjust lblnDetbf accordingly        
-        lblnDetbf                   = bf;
-        lblnDetbf(isnan(lblnDetbf)) = 1;        
-        lblnDetbf                   = log(prod(lblnDetbf,2));  
-        lblnDetbf                   = sum(lblnDetbf);
-        
-        dat.lb.lnDetbf(end + 1) = lblnDetbf;
-    end
+    bf = get_bf(dat.bf.chan,dm_s);             
 else  
     % Bias field not estimated
     bf = 1;                                    
@@ -49,19 +39,22 @@ end
 
 if it_mod > 1
     % Adjust lower bound when building template
-    %----------------------------------------------------------------------
-    
+    %----------------------------------------------------------------------    
     append2lb = false;
-    
-    if opt.reg.mc_aff ...
-        % Affine parameters have been mean corrected -> adjust lb accordingly
-        aff_reg                 = double(-0.5*dat.reg.r(:)'*opt.reg.aff_reg_ICO*dat.reg.r(:));    
-        dat.lb.aff_reg(end + 1) = aff_reg;   
-
+ 
+    if do_bf && opt.bf.mc_bf
+        % Bias field has been mean corrected
+        lblnDetbf                   = bf;
+        lblnDetbf(isnan(lblnDetbf)) = 1;        
+        lblnDetbf                   = log(prod(lblnDetbf,2));  
+        lblnDetbf                   = sum(lblnDetbf);
+        
+        dat.lb.lnDetbf(end + 1)  = lblnDetbf;
+        
         append2lb = true;
     end
 
-    if opt.model.PropPrior.do && it_mod > opt.reg.strt_nl
+    if opt.model.PropPrior.do && it_mod > opt.start_it.do_prop
         % Tissue proportion prior has been updated
         dat.lb.prop_reg(end + 1) = dot(PropPrior.alpha - 1,log(spm_matcomp('softmax',dat.gmm.prop) + eps));
         
@@ -81,7 +74,7 @@ else,                    v = single(dat.reg.v.dat(:,:,:,:));
 end
 
 % FFT of Green's function
-prm_v                           = [vs_s ff*opt.reg.rparam];
+prm_v                           = [vs_s ff*opt.reg.rparam*prod(vs_s)];
 if opt.reg.int_args > 1, Greens = spm_shoot_greens('kernel',dm_s(1:3),prm_v);
 else,                    Greens = [];
 end
@@ -141,7 +134,7 @@ elseif it_mod == 1 && opt.reg.do_aff
             clear Z
         end
         
-        [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);
+        [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt,true);
         
         if gain < opt.reg.init_aff_tol
             % Finished updating registration
@@ -231,15 +224,17 @@ for it_seg=1:opt.seg.niter
     for it_bf=1:opt.bf.niter                 
         % Start with updating GMM parameters
         dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
-                
-        if (it_bf > 1 && ~((dat.lb.last - ooll)>2*opt.bf.tol*I)) || it_bf == opt.bf.niter, break; end
-        ooll = dat.lb.last;
-                
+                              
         if do_bf 
             % Update bias-field parameters    
             [dat,bf] = update_bf(dat,obs,bf,Template,dm_s,labels,miss,opt);             
         end               
     
+        if it_bf > 1 && ~((dat.lb.last - ooll) > 2*opt.bf.tol*I)
+            break; 
+        end
+        ooll = dat.lb.last;
+        
         if opt.verbose.gmm >= 3                        
             show_seg(obs,Template,dat.gmm.prop, ...
                      get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
@@ -252,16 +247,24 @@ for it_seg=1:opt.seg.niter
     %----------------------------------------------------------------------
     
     if do_prop         
-        for it_prop=1:4               
-            % Start with updating GMM parameters
-            dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
+        if opt.template.do
+            prop_niter = opt.prop.niter(min(numel(opt.prop.niter),it_mod));
+        else
+            prop_niter = opt.prop.niter(min(numel(opt.prop.niter),iter));            
+        end
 
-            if (it_prop > 1 && ~((dat.lb.last - oll)>2*opt.bf.tol*I)) || it_prop == opt.bf.niter, break; end
-            oll = dat.lb.last;
+        for it_prop=1:prop_niter         
+            % Start with updating GMM parameters
+            dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                               
 
             % Update tissue proportions
             dat = update_prop(obs,bf,dat,Template,labels,scl,dm_s,PropPrior,miss,opt);          
 
+            if it_prop > 1 && ~((dat.lb.last - oll)  > 2*opt.bf.tol*I)
+                break; 
+            end
+            oll = dat.lb.last;
+            
             if opt.verbose.gmm >= 3                        
                 show_seg(obs,Template,dat.gmm.prop, ...
                          get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
@@ -279,7 +282,7 @@ for it_seg=1:opt.seg.niter
             % Start with updating GMM parameters
             dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
 
-            if it_mrf == 2, break; end        
+%             if it_mrf == 2, break; end        
 
             % Update MRF weights        
             dat = update_mrf(dat,obs,bf,Template,dm_s,labels,scl,miss,opt);                    
@@ -299,7 +302,11 @@ for it_seg=1:opt.seg.niter
     if do_reg              
         for it_reg=1:opt.reg.niter 
         
-            if opt.reg.do_aff                
+            if opt.reg.do_aff      
+                
+                % Start with updating GMM parameters
+                dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt); 
+                
                 % Update affine parameters                                
                 [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);               
             
@@ -311,6 +318,10 @@ for it_seg=1:opt.seg.niter
             end
             
             if do_nl
+                
+                % Start with updating GMM parameters
+                dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt); 
+                
                 % Update initial velocities                                                  
                 [dat,y,v,Template,Greens,gain,opt] = update_nonlin(dat,model,obs,Template,bf,labels,v,y,Affine,Greens,it_seg,it_mod,scl,miss,opt);                
 
@@ -321,10 +332,10 @@ for it_seg=1:opt.seg.niter
                 end    
             end        
             
-            if gain < opt.reg.tol && it_reg > 1
-               % Finished updating registration
-               break;
-            end
+%             if gain < opt.reg.tol
+%                % Finished updating registration
+%                break;
+%             end
         end
     end  
         
@@ -384,6 +395,22 @@ if opt.verbose.model >= 3
     spm_misc('create_nii',dat.pth.bfim2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'bfim2d');    
 
     clear im
+    
+    % ..of initial velocities
+    v2d = zeros([dm_s(1:2) 1 3],'single');
+    for i=1:3        
+        v2d(:,:,1,i) = v(:,:,ix_z,i);
+    end    
+    
+    dat.pth.v2d = fullfile(opt.dir_seg2d,['v2d_' nam '.nii']);
+    spm_misc('create_nii',dat.pth.v2d,v2d,mat_s,[spm_type('float32') spm_platform('bigend')],'v2d');        
+    clear v2d
+    
+    % ..of warped, scaled template    
+    template2d     = reshape(spm_matcomp('softmax',Template(ix_slice(ix_z,prod(dm_s(1:2))),:),dat.gmm.prop),[dm_s(1:2) 1 K]);
+    dat.pth.temp2d = fullfile(opt.dir_seg2d,['temp2d_' nam '.nii']);
+    spm_misc('create_nii',dat.pth.temp2d,template2d,mat_a,[spm_type('float32') spm_platform('bigend')],'temp2d');        
+    clear template2d
 end
 
 if do_nl

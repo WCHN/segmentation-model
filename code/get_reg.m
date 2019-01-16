@@ -18,7 +18,7 @@ function reg = get_reg(dat,fct,opt)
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
 % FFT of Green's function
-reg.prm                             = [fct.subj.vs fct.subj.ff*opt.reg.rparam];
+reg.prm                             = [fct.subj.vs fct.subj.ff*opt.reg.rparam*prod(fct.subj.vs)];
 if opt.reg.int_args > 1, reg.Greens = spm_shoot_greens('kernel',fct.subj.dm(1:3),reg.prm);
 else,                    reg.Greens = [];
 end

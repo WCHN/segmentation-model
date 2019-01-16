@@ -34,7 +34,8 @@ function [opt,holly] = default_opt(opt)
 % opt.gmm.hist.verbose_gmm- Verbosity level in sub-loop 
 % opt.gmm.labels.cm       - Map manual labels to Template classes
 % opt.gmm.labels.use      - Use manual labels
-% opt.gmm.labels.S        - Rater sensitivity
+% opt.gmm.labels.S        - Rater sensitivity for labelled voxels
+% opt.gmm.labels.Su       - Rater sensitivity for unlabelled voxels
 % opt.gmm.GaussPrior.constrained - Constrain class variance to be similar
 % opt.gmm.GaussPrior.verbose     - Verbosity when updating GMM prior
 %
@@ -102,7 +103,8 @@ function [opt,holly] = default_opt(opt)
 %
 % TISSUE PROPORTIONS
 % ------------------
-% opt.prop.niter        - Maximum number of Gauss-Newton iterations
+% opt.prop.niter        - Maximum number of subject proportion update sub-iterations
+% opt.prop.gnniter      - Maximum number of Gauss-Newton iterations
 % opt.prop.tol          - Lower bound tolerance criterion
 % opt.prop.reg          - Initial regularisation parameter
 % opt.prop.do           - Optimise tissue proportions?
@@ -295,7 +297,8 @@ if ~isfield(opt.gmm.labels,'use')
     opt.gmm.labels.use = false;
 end
 if ~isfield(opt.gmm.labels,'S') 
-    opt.gmm.labels.S   = 0.9999;
+    opt.gmm.labels.S   = 0.99;
+end
 if ~isfield(opt.gmm.labels,'Su') 
     opt.gmm.labels.Su  = 0.7;
 end
@@ -308,7 +311,7 @@ if ~isfield(opt.template,'do')
     opt.template.do           = false;
 end
 if ~isfield(opt,'sched') 
-    opt.sched = get_sched(opt,START_NL_TEMPL);
+    opt.sched = get_sched(opt);
 end
 if ~isfield(opt.template,'pth_template')
     opt.template.pth_template = '';
@@ -331,7 +334,7 @@ if ~isfield(opt.template,'reg0')
     opt.template.reg0         = def.sparam;
 end
 if ~isfield(opt.template,'reg')
-    opt.template.reg          = opt.sched.a(1)*opt.template.reg0;
+    opt.template.reg          = [opt.template.reg0(1:2) opt.sched.a(1)*opt.template.reg0(3)];
 end
 if ~isfield(opt.template,'shrink')
     opt.template.shrink       = false;
@@ -366,17 +369,17 @@ if ~isfield(opt,'reg')
     opt.reg              = struct;
 end
 if ~isfield(opt.reg,'rparam0') 
-    opt.reg.rparam0      = def.rparam;
+    opt.reg.rparam0      = [0 0.005 0.2 0.025 0.05];
 end
 if ~isfield(opt.reg,'rparam') 
-    opt.reg.rparam       = opt.reg.rparam0;
-    opt.reg.rparam(3)    = opt.sched.reg(1)*opt.reg.rparam(3);
+    % [absolute displacements, laplacian, bending energy, linear elasticity mu, linear elasticity lambda]
+    opt.reg.rparam       = opt.sched.reg(1)*opt.reg.rparam0;
 end
 if ~isfield(opt.reg,'int_args') 
     opt.reg.int_args     = opt.sched.eul(1);
 end
 if ~isfield(opt.reg,'niter') 
-    opt.reg.niter        = 3;
+    opt.reg.niter        = 1;
 end
 if ~isfield(opt.reg,'tol') 
     opt.reg.tol          = 1e-4;
@@ -388,10 +391,10 @@ if ~isfield(opt.reg,'mc_aff')
     opt.reg.mc_aff       = false;
 end
 if ~isfield(opt.reg,'aff_type') 
-    opt.reg.aff_type     = 'affine'; % ['translation','rotation','rigid','similitude','affine']
+    opt.reg.aff_type     = 'similitude'; % ['translation','rotation','rigid','similitude','affine']
 end
 if ~isfield(opt.reg,'aff_reg') 
-    opt.reg.aff_reg      = 1;
+    opt.reg.aff_reg      = 0;
 end
 if ~isfield(opt.reg,'do_aff') 
     opt.reg.do_aff       = true;
@@ -400,10 +403,10 @@ if ~isfield(opt.reg,'do_nl')
     opt.reg.do_nl        = true;
 end
 if ~isfield(opt.reg,'nit_init_aff') 
-    opt.reg.nit_init_aff = 26;
+    opt.reg.nit_init_aff = 12;
 end
 if ~isfield(opt.reg,'init_aff_tol') 
-    opt.reg.init_aff_tol = 1e-3;
+    opt.reg.init_aff_tol = 1e-4;
 end
 
 % holly
@@ -447,7 +450,7 @@ if ~isfield(opt.seg.mrf,'ml')
     opt.seg.mrf.ml       = true;
 end
 if ~isfield(opt.seg.mrf,'val_diag')
-    opt.seg.mrf.val_diag = 0.8;
+    opt.seg.mrf.val_diag = 0.5;
 end
 if ~isfield(opt.seg.mrf,'alpha')
     opt.seg.mrf.alpha    = 1e5;
@@ -461,7 +464,7 @@ if ~isfield(opt.bf,'biasfwhm')
     opt.bf.biasfwhm      = 60;
 end
 if ~isfield(opt.bf,'niter')
-    opt.bf.niter         = 8;
+    opt.bf.niter         = 3;
 end
 if ~isfield(opt.bf,'tol')
     opt.bf.tol           = 1e-4;
@@ -470,7 +473,7 @@ if ~isfield(opt.bf,'mc_bf')
     opt.bf.mc_bf         = false;
 end
 if ~isfield(opt.bf,'biasreg')
-    opt.bf.biasreg       = 1e5;
+    opt.bf.biasreg       = 1e6;
 end
 if ~isfield(opt.bf,'do')
     opt.bf.do            = true;
@@ -484,7 +487,10 @@ if ~isfield(opt,'prop')
     opt.prop       = struct;
 end
 if ~isfield(opt.prop,'niter')
-    opt.prop.niter = 1;
+    opt.prop.niter = 3;
+end
+if ~isfield(opt.prop,'gnniter')
+    opt.prop.gnniter = 1;
 end
 if ~isfield(opt.prop,'tol')
     opt.prop.tol   = 1e-4;
@@ -504,16 +510,16 @@ if ~isfield(opt,'nline_search')
     opt.nline_search      = struct;
 end
 if ~isfield(opt.nline_search,'bf')
-    opt.nline_search.bf   = 4;
+    opt.nline_search.bf   = 6;
 end
 if ~isfield(opt.nline_search,'aff')
-    opt.nline_search.aff  = 4;
+    opt.nline_search.aff  = 6;
 end
 if ~isfield(opt.nline_search,'nl')
-    opt.nline_search.nl   = 4;
+    opt.nline_search.nl   = 6;
 end
 if ~isfield(opt.nline_search,'prop')
-    opt.nline_search.prop = 4;
+    opt.nline_search.prop = 6;
 end
 
 % opt.clean
@@ -661,10 +667,11 @@ end
 
 % opt.verbose
 if ~isfield(opt,'verbose') 
-    opt.verbose       = struct;
+    opt.verbose         = struct;
 end
 if ~isfield(opt.verbose,'level') 
-    opt.verbose.level = 2;
+    opt.verbose.level   = 2;
+end
 if ~isfield(opt.verbose,'mx_rows') 
     opt.verbose.mx_rows = 10;
 end
@@ -700,11 +707,7 @@ end
 
 % options when training
 if opt.template.do 
-    opt.seg.niter   = 1;              
-    
-    opt.reg.rparam0   = def.rparam;
-    opt.reg.rparam    = opt.reg.rparam0;
-    opt.reg.rparam(3) = opt.sched.reg(1)*opt.reg.rparam(3);
+    opt.seg.niter   = 1;                  
     
     opt.gmm.labels.use = true;           
     opt.bf.mc_bf       = true;    
@@ -718,7 +721,7 @@ if opt.template.do
     opt.bf.mc_bf_verbose = true;     
     
     opt.start_it.do_mg      = 1;
-    opt.start_it.do_prop    = 2;        
+    opt.start_it.do_prop    = 5;        
     opt.start_it.do_upd_mrf = 5;
 end
 

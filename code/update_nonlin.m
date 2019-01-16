@@ -1,15 +1,5 @@
 function [dat,y,v,template,Greens,gain,opt] = update_nonlin(dat,model,obs,template,bf,labels,v,y,Affine,Greens,it_seg,it_template,scl,miss,opt)
 
-if it_seg > 1
-    % Non-linear registration parameters changes with iteration number (single-subject)
-    opt = modify_opt(opt,it_seg);     
-end
-
-if it_template > 1
-    % Non-linear registration parameters changes with iteration number (over populations)
-    opt = modify_opt(opt,it_template);     
-end
-
 % Parse input
 prop     = dat.gmm.prop;
 cluster  = dat.gmm.cluster;
@@ -21,26 +11,18 @@ part    = dat.gmm.part;
 % Parameters
 [dm,~,vs] = obs_info(dat);
 ff        = get_ff(vs);      
-prm       = [vs ff*opt.reg.rparam];
 K         = size(template,2);
 lkp       = [1 4 5; 4 2 6; 5 6 3];
 const     = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
 ix_tiny   = get_par('ix_tiny',dat.population,part.lkp,opt);
 
-if armijo < 1e-6
-    % Already found optimal solution
-    dat.armijo.nl = min(armijo*1.25,1);
-    gain          = 0;
-    
-    return; 
-end
-
-if int_args > 1
-    % Large deformation
-    Greens   = spm_shoot_greens('kernel',dm(1:3),prm); 
-%     y        = make_deformation(v,prm,int_args,Greens);
-%     Template = warp_template(model,y,Affine);    
-end     
+% if armijo < 1e-6
+%     % Already found optimal solution
+%     dat.armijo.nl = min(armijo*1.25,1);
+%     gain          = 0;
+%     
+%     return; 
+% end
 
 %--------------------------------------------------------------------------
 % Compute objective function and its first and second derivatives
@@ -59,7 +41,7 @@ else
     Jz = reshape(Affine(1:3,1:3),[1 1 3 3]);
 end
 
-[dlb,mom] = gmm_img('init_lb_and_mom',miss);
+dlb = gmm_img('init_lb_and_mom',miss);
 
 % Neighborhood part
 lnPzN = gmm_mrf('apply',dat.mrf);
@@ -77,10 +59,10 @@ for z=1:dm(3)
     end
     
     % Compute responsibilities and lb
-    [Z,dlb,BX] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny,dlb);
+    [Z,dlb] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny,dlb);
 
     % Compute sufficient statistics 
-    mom = gmm_img('slice_mom',mom,Z,slice,miss,BX);
+%     mom = gmm_img('slice_mom',mom,Z,slice,miss,BX);
 
     % Map cluster responsibilities to tissue responsibilities
     Z = cluster2template(Z,part);              
@@ -134,26 +116,42 @@ for z=1:dm(3)
 end
 clear J y1 Z Template0
 
-lbX = spm_gmm_lib('MarginalSum', mom.SS0, mom.SS1, mom.SS2, cluster{1}, cluster{2}, miss.L, mom.SS2b);    
+% lbX = spm_gmm_lib('MarginalSum', mom.SS0, mom.SS1, mom.SS2, cluster{1}, cluster{2}, miss.L, mom.SS2b);    
 
-dat.lb.X(end + 1)       = lbX;     
-dat.lb.Z(end + 1)       = dlb.Z;   
-if numel(part.mg) > numel(prop)
-    dat.lb.mg(end + 1)  = dlb.mg;   
-end
-if ~isempty(labels)
-    dat.lb.lab(end + 1) = dlb.lab;
-end
-if dat.mrf.do   
-    dat.lb.ZN(end + 1)  = gmm_mrf('lowerbound',dat.mrf);
+% dat.lb.X(end + 1)       = lbX;     
+% dat.lb.Z(end + 1)       = dlb.Z;   
+% if numel(part.mg) > numel(prop)
+%     dat.lb.mg(end + 1)  = dlb.mg;   
+% end
+% if ~isempty(labels)
+%     dat.lb.lab(end + 1) = dlb.lab;
+% end
+% if dat.mrf.do   
+%     dat.lb.ZN(end + 1)  = gmm_mrf('lowerbound',dat.mrf);
+% end
+
+% Non-linear registration parameters can change with iteration number...
+if opt.template.do
+    % learning
+    [opt,nscl,oscl] = modify_opt(opt,it_template);     
+else
+    % single-subject
+    [opt,nscl,oscl] = modify_opt(opt,it_seg);     
 end
 
-dat.lb = check_convergence('nl',dat.lb,1,verbose);
+prm  = [vs ff*opt.reg.rparam*prod(vs)];
+
+if int_args > 1
+    % Large deformation
+    Greens   = spm_shoot_greens('kernel',dm(1:3),prm); 
+%     y        = make_deformation(v,prm,int_args,Greens);
+%     Template = warp_template(model,y,Affine);    
+end   
 
 % Add regularisation and compute GN step
 u      = spm_diffeo('vel2mom',v,prm);
 g      = g + u;
-Update = spm_diffeo('fmg',H, g,[prm 2 2]);
+Update = spm_diffeo('fmg',H, g,[prm 3 3]);
 clear H g u
 
 % Linesearch
@@ -174,34 +172,29 @@ for line_search=1:nline_search
     
     % Compute new lower bound
     u     = spm_diffeo('vel2mom',v,prm);
-    v_reg = 0;
-    for i=1:3
-        v_reg = v_reg + (-0.5*sum(sum(sum(sum(double(u(:,:,:,i)).*double(v(:,:,:,i)))))));
-    end
+    v_reg = -0.5*u(:)'*v(:);    
     clear u
-    nlb = v_reg;
-    
-    nlb = nlb + dat.lb.X(end) + dat.lb.lab(end) + dat.lb.lnDetbf(end) ...
-          + dat.lb.MU(end) + dat.lb.A(end) + sum(dat.lb.bf_reg(end,:)) + dat.lb.aff_reg(end) + dat.lb.prop_reg(end) + dat.lb.mg(end) + dat.lb.ZN(end);          
     
     template = warp_template(model,y,Affine);    
     
     [dlb,~,dat.mrf] = gmm_img('img_lb_and_mom',obs,bf,scl,template,labels,prop,cluster{1},cluster{2},miss,part,dm,dat.mrf,ix_tiny,{'Template',otemplate});                      
-    nlb             = nlb + dlb.Z;
-
+    
     % Check new lower bound
-    if nlb > dat.lb.last
+    if (dlb.Z + v_reg) > (dat.lb.Z(end) + nscl/oscl*dat.lb.v_reg(end))
+%         disp('update_nonlin converged')
         armijo = min(armijo*1.25,1);
         
         dat.lb.Z(end + 1)     = dlb.Z;                 
         dat.lb.v_reg(end + 1) = v_reg;                                                
 
         break;
-    else
+    else        
         armijo = armijo*0.5;
         v      = ov;
         
         if line_search == nline_search            
+%             disp('update_nonlin did not converge')
+            
             y        = make_deformation(v,prm,int_args,Greens);                        
             template = otemplate;            
         end

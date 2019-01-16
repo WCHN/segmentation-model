@@ -33,16 +33,13 @@ ix_tiny     = get_par('ix_tiny',dat.population,part.lkp,opt);      % Labels to t
 
 for c=1:nb_channels % Loop over channels
 
-    if armijo(c) < 1e-6
-        % Already found optimal solution
-        armijo(c) = min(armijo(c)*1.25,1);
-        dat.lb    = check_convergence('bf',dat.lb,c,verbose,armijo(c)); 
-        
-        continue; 
-    end
-    
-    % Init
-    [dlb,mom] = gmm_img('init_lb_and_mom',miss);
+%     if armijo(c) < 1e-6
+%         % Already found optimal solution
+%         armijo(c) = min(armijo(c)*1.25,1);
+%         dat.lb    = check_convergence('bf',dat.lb,c,verbose,armijo(c)); 
+%         
+%         continue; 
+%     end
     
     % Neighborhood part
     lnPzN = gmm_mrf('apply',dat.mrf);
@@ -73,14 +70,11 @@ for c=1:nb_channels % Loop over channels
         end
     
         % Compute responsibilities and lb
-        [Z,dlb,BX] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny,dlb);
+        [Z,~,BX] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny);
         
         if dat.mrf.do        
             dat.mrf.oZ(:,:,z,:) = reshape(uint8((2^8)*cluster2template(Z,part)),[dm(1:2) 1 max(part.lkp)]);
         end
-        
-        % Compute sufficient statistics 
-        mom = gmm_img('slice_mom',mom,Z,slice,miss,BX);
         
         slice_grad = zeros(dm(1:2));
         slice_hess = zeros(dm(1:2));
@@ -171,22 +165,6 @@ for c=1:nb_channels % Loop over channels
         clear slice_grad slice_hess b3 Z msk
 
     end % <-- Loop over slices
-
-    lbX = spm_gmm_lib('MarginalSum', mom.SS0, mom.SS1, mom.SS2, cluster{1}, cluster{2}, miss.L, mom.SS2b);    
-
-    dat.lb.X(end + 1)       = lbX;     
-    dat.lb.Z(end + 1)       = dlb.Z; 
-    if numel(part.mg) > numel(prop)
-        dat.lb.mg(end + 1)  = dlb.mg;   
-    end
-    if ~isempty(labels)
-        dat.lb.lab(end + 1) = dlb.lab;
-    end
-    if dat.mrf.do   
-        dat.lb.ZN(end + 1)  = gmm_mrf('lowerbound',dat.mrf);
-    end
-
-    dat.lb = check_convergence('bf',dat.lb,1,verbose);
     
     % Inverse covariance of priors
     ICO = chan(c).C;         
@@ -207,30 +185,23 @@ for c=1:nb_channels % Loop over channels
         chan(c).T = chan(c).T - armijo(c)*Update;
 
         % Compute new bias-field (only for channel c)
-        [bf,bf_reg] = get_bf(chan,dm,bf,c,bf_reg);                                                  
+        [bf,bf_reg] = get_bf(chan,dm,bf,c,bf_reg);                                               
 
-        % Compute new lower bound
-        nlb = sum(bf_reg);        
-        nlb = nlb + dat.lb.Z(end) + dat.lb.lab(end) ...
-              + dat.lb.MU(end) + dat.lb.A(end) + dat.lb.v_reg(end) ...
-              + dat.lb.aff_reg(end) + dat.lb.prop_reg(end) + dat.lb.mg(end) + dat.lb.ZN(end);                        
-
+        % Compute new lower bound                      
         lblnDetbf                   = bf;
         lblnDetbf(isnan(lblnDetbf)) = 1;        
         lblnDetbf                   = log(prod(lblnDetbf,2));  
         lblnDetbf                   = sum(lblnDetbf);
-        nlb                         = nlb + lblnDetbf;
 
         [dlb,~,dat.mrf] = gmm_img('img_lb_and_mom',obs,bf,[],template,labels,prop,cluster{1},cluster{2},miss,part,dm,dat.mrf,ix_tiny,{'bf',obf});                      
-        nlb             = nlb + dlb.X;
 
         % Check new lower bound
-        if nlb > dat.lb.last               
+        if (dlb.X + lblnDetbf + sum(bf_reg)) > (dat.lb.X(end) + dat.lb.lnDetbf(end) + sum(dat.lb.bf_reg(end,:)))              
             armijo(c) = min(armijo(c)*1.25,1);
 
             dat.lb.X(end + 1)        = dlb.X;                    
             dat.lb.lnDetbf(end + 1)  = lblnDetbf;  
-            dat.lb.bf_reg(end + 1,:) = bf_reg;                                                                                                            
+            dat.lb.bf_reg(end + 1,:) = bf_reg;                                                                                                         
             
             break;
         else                                

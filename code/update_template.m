@@ -109,8 +109,9 @@ else
             % Generates deformations from initial velocity fields by
             % gedesic shooting (if opt.reg.int_args > 1)
             y      = make_deformation(v,prm_v,int_args,Greens);
-            Greens = []; v = [];
-
+            Greens = [];
+            v      = [];
+            
             % Compute affine transformation matrix
             E      = spm_dexpm(dat{s}.reg.r,B); % Compute matrix exponential
             Affine = mat_a\E*mat_s;   
@@ -148,8 +149,8 @@ else
                 dat{s}.pth.bfim2d = fullfile(opt.dir_seg2d,['bfim2d_' nam '.nii']);
                 spm_misc('create_nii',dat{s}.pth.bfim2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'bfim2d');    
                 im              = [];
-            end
-
+            end            
+            
             % Push responsibilities in subject space to template space
             Z = push_responsibilities(Z,y,dm_a(1:3)); 
             y = []; 
@@ -243,5 +244,4 @@ end
 ss2 = sum(sum(sum(sum(gr.^2))));      % This should approach zero at convergence
 
 a = a - spm_field(H,gr,[prm(1:3) prm(4) prm(5:6) its]); % Gauss-Newton update  
-a = max(a,log(eps)); % Make sure there are no zero values
 %==========================================================================

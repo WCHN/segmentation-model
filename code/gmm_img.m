@@ -390,7 +390,7 @@ elseif strcmpi(varargin{1}{1},'Template') || strcmpi(varargin{1}{1},'prop')
     Z = spm_gmm_lib('Responsibility', lnpX,  ologPI(:,lkp),lnDetbf,   lnPl,log(mg),lnPzN);         
 end
 
-if nargout > 1
+if nargout > 1 && nargin >= 10
     % Compute lower bound
     %----------------------------------------------------------------------
     lbZ  = spm_gmm_lib('KL', 'Categorical', Z, 1, lnPI);
@@ -402,6 +402,8 @@ if nargout > 1
 
     lb.Z   = lb.Z   + lbZ;
     lb.mg  = lb.mg  + lbmg;
+else
+    lb     = struct;
 end
 %==========================================================================
 

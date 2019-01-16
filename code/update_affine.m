@@ -1,4 +1,6 @@
-function [dat,Affine,template,gain] = update_affine(dat,model,obs,template,bf,labels,mat_a,mat_s,y,dm,scl,miss,opt)
+function [dat,Affine,template,gain] = update_affine(dat,model,obs,template,bf,labels,mat_a,mat_s,y,dm,scl,miss,opt,comp_lb)
+
+if nargin < 14, comp_lb = false; end
 
 % Parse input
 r       = dat.reg.r;
@@ -17,13 +19,13 @@ Affine = mat_a\E*mat_s;
 const  = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
 ix_tiny = get_par('ix_tiny',dat.population,part.lkp,opt);
 
-if armijo < 1e-6
-    % Already found optimal solution
-    dat.armijo.aff = min(armijo*1.25,1);
-    gain           = 0;
-    
-    return; 
-end
+% if armijo < 1e-6
+%     % Already found optimal solution
+%     dat.armijo.aff = min(armijo*1.25,1);
+%     gain           = 0;
+%     
+%     return; 
+% end
 
 %--------------------------------------------------------------------------
 % Compute objective function and its first and second derivatives
@@ -58,12 +60,17 @@ for z=1:dm(3)
         lnPzNz = lnPzN;
     end
     
-    % Compute responsibilities and lb
-    [Z,dlb,BX] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny,dlb);     
-   
-    % Compute sufficient statistics 
-    mom = gmm_img('slice_mom',mom,Z,slice,miss,BX);
-        
+    if comp_lb
+        % Compute responsibilities and lb
+        [Z,dlb,BX] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny,dlb);     
+
+        % Compute sufficient statistics 
+        mom = gmm_img('slice_mom',mom,Z,slice,miss,BX);
+    else
+        % Compute responsibilities and lb
+        [Z,dlb] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny,dlb);  
+    end
+    
     % Map cluster responsibilities to tissue responsibilities
     Z = cluster2template(Z,part);       
 
@@ -109,21 +116,21 @@ for z=1:dm(3)
 end
 clear y1 Z gZ Hz Template0
 
-lbX = spm_gmm_lib('MarginalSum', mom.SS0, mom.SS1, mom.SS2, cluster{1}, cluster{2}, miss.L, mom.SS2b);   
-
-dat.lb.X(end + 1)       = lbX;     
-dat.lb.Z(end + 1)       = dlb.Z;     
-if numel(part.mg) > numel(prop)
-    dat.lb.mg(end + 1)  = dlb.mg;   
+if comp_lb
+    lbX = spm_gmm_lib('MarginalSum', mom.SS0, mom.SS1, mom.SS2, cluster{1}, cluster{2}, miss.L, mom.SS2b);   
+    
+    dat.lb.X(end + 1)       = lbX;     
+    dat.lb.Z(end + 1)       = dlb.Z;     
+    if numel(part.mg) > numel(prop)
+        dat.lb.mg(end + 1)  = dlb.mg;   
+    end
+    if ~isempty(labels)
+        dat.lb.lab(end + 1) = dlb.lab;
+    end
+    if dat.mrf.do   
+        dat.lb.ZN(end + 1)  = gmm_mrf('lowerbound',dat.mrf);
+    end
 end
-if ~isempty(labels)
-    dat.lb.lab(end + 1) = dlb.lab;
-end
-if dat.mrf.do   
-    dat.lb.ZN(end + 1)  = gmm_mrf('lowerbound',dat.mrf);
-end
-
-dat.lb = check_convergence('aff',dat.lb,1,verbose);
 
 % Fill in missing triangle
 for i1=1:Nr
@@ -153,17 +160,12 @@ for line_search=1:nline_search
     % Compute new lower bound
     aff_reg = double(-0.5*r(:)'*ICO*r(:));    
 
-    nlb = aff_reg;
-    nlb = nlb + dat.lb.X(end) + dat.lb.lab(end) +  dat.lb.lnDetbf(end) ...
-          + dat.lb.MU(end) + dat.lb.A(end) + sum(dat.lb.bf_reg(end,:)) + dat.lb.v_reg(end) + dat.lb.prop_reg(end) + dat.lb.mg(end) + dat.lb.ZN(end);
-    
     template = warp_template(model,y,Affine);        
 
     [dlb,~,dat.mrf] = gmm_img('img_lb_and_mom',obs,bf,scl,template,labels,prop,cluster{1},cluster{2},miss,part,dm,dat.mrf,ix_tiny,{'Template',oTemplate});                      
-    nlb             = nlb + dlb.Z;
-
+    
     % Check new lower bound
-    if nlb > dat.lb.last
+    if (dlb.Z + aff_reg) > (dat.lb.Z(end) + dat.lb.aff_reg(end))
         armijo = min(armijo*1.25,1);
         
         dat.lb.Z(end + 1)       = dlb.Z;                                                      

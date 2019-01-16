@@ -19,7 +19,7 @@ else
     v                      = single(dat.reg.v.dat(:,:,:,:));   
 end
 labels                     = get_labels(dat,opt);
-prm_v                      = [vs_s ff*opt.reg.rparam];   
+prm_v                      = [vs_s ff*opt.reg.rparam*prod(vs_s)];   
 do_bf                      = opt.bf.do && strcmpi(modality,'MRI');
 if do_bf, bf               = get_bf(dat.bf.chan,dm_s);
 else,     bf               = 1;
@@ -307,6 +307,14 @@ if opt.write.ml
 end
 clear Z
        
+%--------------------------------------------------------------------------    
+% Merge hemisphere classes into just one class
+%--------------------------------------------------------------------------
+
+if ~isempty(opt.lesion.hemi)
+    
+end
+
 %--------------------------------------------------------------------------    
 % Show final segmentations
 %--------------------------------------------------------------------------
