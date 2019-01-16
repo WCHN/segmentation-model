@@ -37,7 +37,7 @@ end
 %==========================================================================
 
 %==========================================================================
-function SegModel_train(dat,opt)
+function opt = SegModel_train(dat,opt)
 % Train segmentation model from a bunch of images
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
