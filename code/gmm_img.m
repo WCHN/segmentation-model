@@ -328,11 +328,11 @@ function [Z,lb,BX] = slice_resp_and_lb(slice,mean,prec,prop,part,miss,const,lnPz
 % Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
 % Parameters
-MU    = mean{1};
-lkp   = part.lkp;
-mg    = part.mg;
-K     = numel(prop);
-tiny  = -Inf;
+MU     = mean{1};
+lkp    = part.lkp;
+mg     = part.mg;
+K      = numel(prop);
+lntiny = log(eps);
 
 % Multiply bias field with observed data
 BX = slice.bf.*slice.obs;
@@ -347,7 +347,7 @@ if numel(varargin) == 1 && strcmpi(varargin{1}{1},'bf')
     obf(isnan(slice.obs)) = 1;
     olblnDetbf            = log(prod(obf,2));         
     olnpX                 = spm_gmm_lib('Marginal', oBX, [{MU} prec], const, {slice.code,miss.L}, (obf.^2)/12);
-    olnpX(:,ix_tiny)      = tiny;
+    olnpX(:,ix_tiny)      = lntiny;
 elseif numel(varargin) == 1 && strcmpi(varargin{1}{1},'Template')        
     oTemplate             = double(varargin{1}{2}(ix_vox,:));
     ologPI                = log(spm_matcomp('softmax',oTemplate,prop) + eps);
@@ -375,7 +375,7 @@ lnPl = lnPl(:,lkp);
 lnPzN = lnPzN(:,lkp);
 
 % Force responsibilties to zero for ix_tiny classes
-lnpX(:,ix_tiny) = tiny;
+lnpX(:,ix_tiny) = lntiny;
 
 % Compute responsibilities
 %----------------------------------------------------------------------
