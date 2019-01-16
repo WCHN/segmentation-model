@@ -189,6 +189,8 @@ function [opt,holly] = default_opt(opt)
 % opt.verbose.bf        - Subject bias field verbose
 % opt.verbose.prop      - Subject tissue proportion verbose
 % opt.verbose.mrf       - Subject MRF verbose
+% opt.verbose.mx_rows   - Number of rows for the sample figures
+%
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
@@ -663,6 +665,8 @@ if ~isfield(opt,'verbose')
 end
 if ~isfield(opt.verbose,'level') 
     opt.verbose.level = 2;
+if ~isfield(opt.verbose,'mx_rows') 
+    opt.verbose.mx_rows = 10;
 end
 if ~isfield(opt.verbose,'model') 
     opt.verbose.model = 0; % [0,1,2,3]

@@ -7,7 +7,7 @@ function show_segmentations(dat,opt)
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
-figname = '(SPM) Segmentations';
+figname = '(SPM) Sample: images, bf-corrected images, segmentations, lower bounds';
 
 % ---------------------------------------------------------------------
 % Get figure (create if it does not exist)
@@ -22,10 +22,10 @@ populations = spm_json_manager('get_populations',dat);
 P           = numel(populations);
 S0          = numel(dat);
 
-mx_rows = 16;
-nrows   = min(S0,mx_rows); 
-K       = opt.template.K;
-ncols   = K + 2;
+nrows         = min(S0,opt.verbose.mx_rows); 
+nrows_per_pop = floor(nrows/P);
+K             = opt.template.K;
+ncols         = K + 3;
 
 cnt_plots = 1;
 for p=1:P
@@ -37,26 +37,36 @@ for p=1:P
         population = dat{s}.population;
 
         if strcmp(population0,population)
-            
+ 
+            % img
             nii = nifti(dat{s}.pth.im2d);    
-            img = single(nii.dat(:,:,:,:));
+            img = single(nii.dat(:,:,:,:));                  
+            img = img';
             
-            if isfield(dat{s}.pth,'bfim2d')
-                nii  = nifti(dat{s}.pth.bfim2d);    
-                bfim = single(nii.dat(:,:,:));
-                img  = [img', bfim'];
-            else
-                img = img';
-            end                        
-            
-            sb = subplot(nrows,ncols,[1:2] + (cnt_plots - 1)*ncols);
+            sb = subplot(nrows,ncols,1 + (cnt_plots - 1)*ncols);
             if strcmpi(modality,'CT')
                 imagesc(img,[0 100]); axis off xy;
             else
                 imagesc(img); axis off xy;
             end
             colormap(sb,gray)
-
+            
+            % bf*img
+            if isfield(dat{s}.pth,'bfim2d')
+                nii = nifti(dat{s}.pth.bfim2d);    
+                img = single(nii.dat(:,:,:));
+                img = img';
+            end                        
+            
+            sb = subplot(nrows,ncols,2 + (cnt_plots - 1)*ncols);
+            if strcmpi(modality,'CT')
+                imagesc(img,[0 100]); axis off xy;
+            else
+                imagesc(img); axis off xy;
+            end
+            colormap(sb,gray)
+            
+            % Z
             nii = nifti(dat{s}.pth.seg2d);    
             Z   = single(nii.dat(:,:,:,:));
             
@@ -65,13 +75,18 @@ for p=1:P
                 img = [img Z(:,:,:,k)'];
             end
 
-            sb = subplot(nrows,ncols,[3:ncols] + (cnt_plots - 1)*ncols);
+            sb = subplot(nrows,ncols,[3:ncols - 1] + (cnt_plots - 1)*ncols);
             imagesc(img,[0 1]); axis off xy;             
-            colormap(sb,pink)
-        
+            colormap(sb,gray)
+                   
+            % lower bound            
+            sb = subplot(nrows,ncols,ncols + (cnt_plots - 1)*ncols);
+            plot(dat{s}.lb.sum); axis off;
+            
             cnt_plots = cnt_plots + 1;
                         
-            if cnt == ceil(mx_rows/P) || cnt_plots > mx_rows
+            if (p < P  && cnt == nrows_per_pop) || ...
+               (p == P && cnt_plots - 1 == nrows)
                 break
             end
             
