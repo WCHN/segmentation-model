@@ -24,7 +24,7 @@ if opt.template.sym
 end
 
 % Re-organise sufficient statistics to a form that is easier to work with
-% Z   = max(Z,eps('single')*1000);
+Z   = max(Z,eps('single')*1000);
 smZ = sum(Z,4);
 Z   = bsxfun(@rdivide,Z,smZ + eps('single'));
 
