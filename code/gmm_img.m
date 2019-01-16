@@ -350,9 +350,9 @@ if numel(varargin) == 1 && strcmpi(varargin{1}{1},'bf')
     olnpX(:,ix_tiny)      = tiny;
 elseif numel(varargin) == 1 && strcmpi(varargin{1}{1},'Template')        
     oTemplate             = double(varargin{1}{2}(ix_vox,:));
-    ologPI                = log(spm_matcomp('softmax',oTemplate,prop));
+    ologPI                = log(spm_matcomp('softmax',oTemplate,prop) + eps);
 elseif numel(varargin) == 1 && strcmpi(varargin{1}{1},'prop')            
-    ologPI                = log(spm_matcomp('softmax',slice.template,varargin{1}{2}));        
+    ologPI                = log(spm_matcomp('softmax',slice.template,varargin{1}{2}) + eps);        
 end
 
 % Compute ln(p(x))
@@ -363,7 +363,7 @@ if isempty(slice.template)
     lnPI         = reshape(prop,[],numel(prop));
     slice.labels = ones(1,size(lnPI,2));
 else
-    lnPI = log(spm_matcomp('softmax',slice.template,prop));
+    lnPI = log(spm_matcomp('softmax',slice.template,prop) + eps);
     lnPI = lnPI(:,lkp);
 end
 

@@ -51,7 +51,7 @@ for z=1:dm(3)
         logPL = log(slice.labels);
         logPL = logPL(:,in{4}.lkp);
 
-        logPI = log(spm_matcomp('softmax',slice.template,in{2}));
+        logPI = log(spm_matcomp('softmax',slice.template,in{2}) + eps);
         logPI = logPI(:,in{4}.lkp);
 
         logPI(isnan(logPI)) = 0; 
@@ -106,7 +106,7 @@ for z=1:dm(3)
         logPL = log(slice.labels);
         logPL = logPL(:,in{4}.lkp);
 
-        logPI = log(spm_matcomp('softmax',slice.template,in{2}));
+        logPI = log(spm_matcomp('softmax',slice.template,in{2}) + eps);
         logPI = logPI(:,in{4}.lkp);
 
         logPI(isnan(logPI)) = 0; 

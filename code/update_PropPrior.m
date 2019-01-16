@@ -33,7 +33,7 @@ alpha = model.PropPrior.alpha; % Previous value of the Dirichlet parameters
 % meanLogX: [Kx1] Mean of the log of the observations (mean(log(X)))
 meanLogX = 0;
 for s=1:S0
-    meanLogX = meanLogX + log(spm_matcomp('softmax',dat{s}.gmm.prop));
+    meanLogX = meanLogX + log(spm_matcomp('softmax',dat{s}.gmm.prop) + eps);
 end
 meanLogX = meanLogX./S0;
 

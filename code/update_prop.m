@@ -112,6 +112,7 @@ for gn=1:opt.prop.niter
         nlb = nlb + dat.lb.lab(end) + dat.lb.X(end) ...
               + dat.lb.MU(end) + dat.lb.A(end) + dat.lb.v_reg(end) ...
               + dat.lb.aff_reg(end) + sum(dat.lb.bf_reg(end,:)) + dat.lb.lnDetbf(end) + dat.lb.mg(end) + dat.lb.ZN(end);                        
+        prop_reg = sum((alpha - 1) .* log(spm_matcomp('softmax',prop) + eps));
 
         [dlb,~,dat.mrf] = gmm_img('img_lb_and_mom',obs,bf,[],template,labels,prop,cluster{1},cluster{2},miss,part,dm,dat.mrf,ix_tiny,{'prop',oprop});                      
         nlb             = nlb + dlb.Z;             

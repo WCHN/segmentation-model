@@ -63,7 +63,7 @@ if it_mod > 1
 
     if opt.model.PropPrior.do && it_mod > opt.reg.strt_nl
         % Tissue proportion prior has been updated
-        dat.lb.prop_reg(end + 1) = dot(PropPrior.alpha - 1,log(spm_matcomp('softmax',dat.gmm.prop)));
+        dat.lb.prop_reg(end + 1) = dot(PropPrior.alpha - 1,log(spm_matcomp('softmax',dat.gmm.prop) + eps));
         
         append2lb = true;
     end
