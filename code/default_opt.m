@@ -721,25 +721,3 @@ end
 opt.dir_output_train = fullfile(opt.dir_output,'train');
 opt.dir_output_seg   = fullfile(opt.dir_output,'segment');
 %==========================================================================
-
-%==========================================================================
-function sched = get_sched(opt,START_NL_TEMPL)
-def = spm_shoot_defaults;
-
-if opt.template.do
-    sched.gmm = opt.gmm.niter;
-    sched.reg = def.sched(1:end);    
-    sched.eul = def.eul_its;
-else    
-    sched.gmm = opt.gmm.niter;       
-    sched.reg = [def.sched(1:9) 1];      
-    sched.eul = 9;
-end
-
-% mx      = 30;
-% stps    = 20;
-% sched.a = mx*exp(-(linspace(0,-log(1/mx),stps)));
-sched.a = def.sched([2*ones(1,START_NL_TEMPL) 2:numel(def.sched)]);
-
-sched.labels = opt.gmm.labels.S;
-%==========================================================================
