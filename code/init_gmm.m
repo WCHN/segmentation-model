@@ -44,7 +44,7 @@ end
 
 % Set prop to uniform
 for s=1:S0
-    dat{s}.gmm.prop = ones(size(dat{s}.gmm.prop))/numel(dat{s}.gmm.prop);
+    dat{s}.gmm.prop = ones(size(dat{s}.gmm.prop));
 end
 
 % Set ElnDetV to zero
