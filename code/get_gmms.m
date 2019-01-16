@@ -233,7 +233,7 @@ function Z = resp_from_kmeans(X,K)
 L = spm_kmeans(X,K,'Distance','sqeuclidian', ... % cityblock/sqeuclidian
                    'Start','plus', ...
                    'Order','magnitude', ...
-                   'Missing',false);
+                   'Missing',true);
 
 % Compute responsibilities from kmeans labels
 Z = zeros([numel(L) K],'single');
