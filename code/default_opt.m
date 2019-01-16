@@ -294,6 +294,8 @@ if ~isfield(opt.gmm.labels,'use')
 end
 if ~isfield(opt.gmm.labels,'S') 
     opt.gmm.labels.S   = 0.9999;
+if ~isfield(opt.gmm.labels,'Su') 
+    opt.gmm.labels.Su  = 0.7;
 end
 
 % opt.template
