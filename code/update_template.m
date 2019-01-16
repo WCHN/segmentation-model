@@ -209,7 +209,7 @@ model = init_template_bg(model,opt);
 
 if verbose>=1
     % Show soft-maxed template
-    show_template(model,opt);
+    show_template(model,opt,S0);
 end
 %==========================================================================
 

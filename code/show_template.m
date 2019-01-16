@@ -1,6 +1,6 @@
-function show_template(model,opt,figname)
+function show_template(model,opt,S0,figname)
 
-if nargin < 3
+if nargin < 4
     figname = '(SPM) Template';
 end
 
@@ -16,7 +16,12 @@ clf(f);
 mu = single(model.template.nii.dat(:,:,:,:));
 mu = spm_matcomp('softmax',mu);
 
-spm_gmm_lib('plot','showcatimg',mu,{'Template'},opt.model.nam_cls);
+title_name = 'Template';
+if nargin >= 3
+    title_name = [title_name ' (S=' num2str(S0) ')'];
+end
+
+spm_gmm_lib('plot','showcatimg',mu,{title_name},opt.model.nam_cls);
 
 deal_figs(model);
 %==========================================================================
