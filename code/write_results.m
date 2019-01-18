@@ -21,8 +21,10 @@ end
 labels                     = get_labels(dat,opt);
 prm_v                      = [vs_s ff*opt.reg.rparam*prod(vs_s)];   
 do_bf                      = opt.bf.do && strcmpi(modality,'MRI');
-if do_bf, bf               = get_bf(dat.bf.chan,dm_s);
-else,     bf               = 1;
+if do_bf || strcmpi(modality,'MRI') 
+    bf               = get_bf(dat.bf.chan,dm_s);
+else     
+    bf               = 1;
 end
 
 %--------------------------------------------------------------------------

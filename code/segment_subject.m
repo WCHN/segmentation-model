@@ -29,7 +29,7 @@ miss = get_par('missing_struct',obs);
 
 % Bias field
 do_bf = opt.bf.do && strcmpi(modality,'MRI'); % Update bias-field?
-if do_bf
+if do_bf || strcmpi(modality,'MRI')
     % Compute bias-field
     bf = get_bf(dat.bf.chan,dm_s);             
 else  

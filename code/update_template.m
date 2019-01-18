@@ -94,8 +94,10 @@ else
             end            
             modality                  = dat{s}.modality{1}.name; 
             do_bf                     = opt.bf.do && strcmpi(modality,'MRI');
-            if do_bf, bf              = get_bf(dat{s}.bf.chan,dm_s);
-            else,     bf              = 1;
+            if do_bf || strcmpi(modality,'MRI') 
+                bf              = get_bf(dat{s}.bf.chan,dm_s);
+            else     
+                bf              = 1;
             end
             labels                    = get_labels(dat{s},opt);
             miss                      = get_par('missing_struct',obs);
