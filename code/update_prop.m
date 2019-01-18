@@ -55,7 +55,10 @@ for gn=1:opt.prop.gnniter
             dat.mrf.oZ(:,:,z,:) = reshape(uint8((2^8)*Z),[dm(1:2) 1 K]);
         end
     
-        [dsumZ, dsumPi, dsumPi2] = suffstat(prop, Z, slice.template);
+        % Mask
+        msk = sum(Z,2) > 0;        
+
+        [dsumZ, dsumPi, dsumPi2] = suffstat(prop, Z, slice.template, msk);
 
         sumZ   = sumZ + dsumZ;
         sumPi  = sumPi + dsumPi;
@@ -89,7 +92,7 @@ for gn=1:opt.prop.gnniter
         prop_reg = sum((alpha - 1) .* log(spm_matcomp('softmax',prop) + eps));
 
         % Z part of lower bound
-        [dlb,~,dat.mrf] = gmm_img('img_lb_and_mom',obs,bf,[],template,labels,prop,cluster{1},cluster{2},miss,part,dm,dat.mrf,ix_tiny,{'prop',oprop});                               
+        [dlb,~,dat.mrf] = gmm_img('img_lb_and_mom',obs,bf,scl,template,labels,prop,cluster{1},cluster{2},miss,part,dm,dat.mrf,ix_tiny,{'prop',oprop});                               
 
         if (dlb.Z + prop_reg) > (dat.lb.Z(end) + oprop_reg)
             armijo = min(armijo*1.25,1);
@@ -127,11 +130,14 @@ dat.gmm.prop    = prop;
 %==========================================================================
 
 %==========================================================================
-function [sumZ, sumPi, sumPi2] = suffstat(w, Z, A)
+function [sumZ, sumPi, sumPi2] = suffstat(w, Z, A, msk)
 
-K      = size(Z,2);
-sumZ   = sum(double(Z),1);
-Pi     = spm_matcomp('softmax',bsxfun(@plus, double(A), double(w)));
+K    = size(Z,2);
+sumZ = sum(double(Z),1);
+Pi   = spm_matcomp('softmax',bsxfun(@plus, double(A), double(w)));
+for k=1:size(Pi,2)
+    Pi(~msk,k) = 0;
+end
 sumPi2 = zeros(K);
 for k=1:K
     sumPi2(k,k) = sum(Pi(:,k).^2);

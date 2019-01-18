@@ -11,8 +11,10 @@ for k=1:dm(4)
     semu   = semu       + emu{k};
 end
 
+msk = sum(Z,4) > 0;
 for k=1:dm(4)
-    emu{k} = emu{k}./semu;    
+    emu{k}       = emu{k}./semu;    
+    emu{k}(~msk) = NaN;
 end
 
 % Compute derivatives

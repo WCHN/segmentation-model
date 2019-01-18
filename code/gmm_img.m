@@ -390,6 +390,12 @@ elseif strcmpi(varargin{1}{1},'Template') || strcmpi(varargin{1}{1},'prop')
     Z = spm_gmm_lib('Responsibility', lnpX,  ologPI(:,lkp),lnDetbf,   lnPl,log(mg),lnPzN);         
 end
 
+% Set non-observed to zero
+%----------------------------------------------------------------------
+for k=1:numel(lkp)
+    Z(slice.code == 0,k) = 0;
+end
+
 if nargout > 1 && nargin >= 10
     % Compute lower bound
     %----------------------------------------------------------------------
