@@ -135,6 +135,8 @@ function [opt,holly] = default_opt(opt)
 %                             Gaussians per tissue
 % opt.start_it.do_prop      - Iteration at which to start optimising proportions
 % opt.start_it.do_upd_mrf   - Iteration at which to start optimising MRF weights
+% opt.start_it.upd_mg       - Iteration at which to start optimising
+%                             Gaussian weights
 %
 % ACTIVATE/DEACTIVATE
 % -------------------
@@ -586,6 +588,9 @@ end
 if ~isfield(opt.start_it,'do_upd_mrf')
     opt.start_it.do_upd_mrf = 1;
 end
+if ~isfield(opt.start_it,'upd_mg')
+    opt.start_it.upd_mg = 1;
+end
 
 % opt.do
 if ~isfield(opt,'do') 
@@ -721,7 +726,8 @@ if opt.template.do
     opt.bf.mc_bf_verbose = true;     
     
     opt.start_it.do_mg      = 1;
-    opt.start_it.do_prop    = 5;        
+    opt.start_it.upd_mg     = 5; % 5
+    opt.start_it.do_prop    = 5; % 5    
     opt.start_it.do_upd_mrf = 5;
 end
 

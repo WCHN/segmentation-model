@@ -221,9 +221,11 @@ for it_seg=1:opt.seg.niter
     % UPDATE BIAS FIELD
     %----------------------------------------------------------------------
             
+    updt_mg = do_mg & it_mod >= opt.start_it.upd_mg;
+    
     for it_bf=1:opt.bf.niter                 
         % Start with updating GMM parameters
-        dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
+        dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);                   
                               
         if do_bf 
             % Update bias-field parameters    
@@ -255,7 +257,7 @@ for it_seg=1:opt.seg.niter
 
         for it_prop=1:prop_niter         
             % Start with updating GMM parameters
-            dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                               
+            dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);                               
 
             % Update tissue proportions
             dat = update_prop(obs,bf,dat,Template,labels,scl,dm_s,PropPrior,miss,opt);          
@@ -280,7 +282,7 @@ for it_seg=1:opt.seg.niter
     if opt.do.update_mrf && opt.do.mrf && (it_mod >= opt.start_it.do_upd_mrf || it_seg >= opt.start_it.do_upd_mrf)
         for it_mrf=1:2
             % Start with updating GMM parameters
-            dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);                   
+            dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);                   
 
 %             if it_mrf == 2, break; end        
 
@@ -305,7 +307,7 @@ for it_seg=1:opt.seg.niter
             if opt.reg.do_aff      
                 
                 % Start with updating GMM parameters
-                dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt); 
+                dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt); 
                 
                 % Update affine parameters                                
                 [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);               
@@ -320,7 +322,7 @@ for it_seg=1:opt.seg.niter
             if do_nl
                 
                 % Start with updating GMM parameters
-                dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt); 
+                dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt); 
                 
                 % Update initial velocities                                                  
                 [dat,y,v,Template,Greens,gain,opt] = update_nonlin(dat,model,obs,Template,bf,labels,v,y,Affine,Greens,it_seg,it_mod,scl,miss,opt);                
@@ -340,7 +342,7 @@ for it_seg=1:opt.seg.niter
     end  
         
     if opt.template.do
-        dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,do_mg,opt);
+        dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);
     end
     
     %----------------------------------------------------------------------
