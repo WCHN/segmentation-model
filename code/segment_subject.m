@@ -206,6 +206,7 @@ end
 
 if opt.verbose.gmm, tic; end % Start timer
 
+gain = 0;
 for it_seg=1:opt.seg.niter     
     
     do_prop = opt.prop.do   && (it_mod >= opt.start_it.do_prop || it_seg >= opt.start_it.do_prop);    
@@ -334,10 +335,10 @@ for it_seg=1:opt.seg.niter
                 end    
             end        
             
-%             if gain < opt.reg.tol
-%                % Finished updating registration
-%                break;
-%             end
+            if gain < opt.reg.tol
+               % Finished updating registration
+               break;
+            end
         end
     end  
         

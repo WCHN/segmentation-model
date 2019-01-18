@@ -125,7 +125,7 @@ else
             Z        = get_resp(obs,bf,dat{s},Template,labels,scl,miss,dm_s,opt);   
             labels   = []; 
             Template = []; 
-            % figure; imshow3D(squeeze(reshape(Z,[dm_s 9])))                                          
+            % figure; imshow3D(squeeze(reshape(Z,[dm_s K])))                                          
 
             if opt.verbose.model >= 3
                 % Write 2D versions to disk (for verbose) of..
