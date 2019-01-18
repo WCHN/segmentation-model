@@ -12,20 +12,16 @@ keep_neck    = opt.template.keep_neck;
 
 pth_spm_tpm = fullfile(spm('dir'),'tpm','TPM.nii,');
 
-if opt.template.resize
-    V_ref = spm_vol(pth_spm_tpm);
-    bb    = world_bb(V_ref(1));
+V_ref = spm_vol(pth_spm_tpm);
+bb    = world_bb(V_ref(1));
 
-    V_in = spm_vol(pth_template);
-    dm   = V_in(1).dim;
-    if keep_neck
-        bb(1,3) = NaN;
-    end
-    if dm(3) == 1
-        bb(:,3) = 0;
-    end
-else
-    bb = NaN(2,3);
+V_in = spm_vol(pth_template);
+dm   = V_in(1).dim;
+if keep_neck
+    bb(1,3) = NaN;
+end
+if dm(3) == 1
+    bb(:,3) = 0;
 end
 
 resize_img(pth_template,opt.template.vs,bb);

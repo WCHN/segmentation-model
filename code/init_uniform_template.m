@@ -73,14 +73,31 @@ end
 model              = struct;
 model.template.nii = nifti(pth_template);
 
-% Crop template and/or change voxel sizes
-model = resize_template(model,opt);
-d     = model.template.nii.dat.dim;
 
-for k=1:K        
-    img = log(ones(d(1:3),'single')/K);
+if opt.template.resize && d(3) > 1
+    % Crop and change voxel sizes (3D)
+    model = resize_template(model,opt);
+    d     = model.template.nii.dat.dim;
+else
+    % Change voxel sizes (2D)
+    dm0  = d;
+    mat0 = M;
+    vx0  = sqrt(sum(mat(1:3,1:3).^2));
+    vx   = opt.template.vs;
     
-    if ~isempty(opt.lesion.hemi)
+    % New orientation matrix and dimensions
+    ds   = vx0./vx;
+    D    = diag([ds 1]);
+    mat  = mat0/D;
+    dm   = floor(D(1:3,1:3)*dm0')';
+    
+    % Save down-sampled template
+    model.template.nii = spm_misc('create_nii',pth_template,zeros([dm K],'single'),mat,[spm_type('float32') spm_platform('bigend')],'template');    
+    d    = dm;
+end
+
+if ~isempty(opt.lesion.hemi)
+    for k=1:K          
         % Assumes there are two lesion classes, one for each hemisphere
         if k == opt.lesion.hemi{1}
             img(1:floor(d(1)/2 - 0.05*d(1)),:,:)  = log(1e-2);
@@ -89,9 +106,9 @@ for k=1:K
             img(ceil(d(1)/2 + 0.05*d(1)):end,:,:) = log(1e-2);
             img = spm_imbasics('smooth_img',img,12);
         end
+
+        model.template.nii.dat(:,:,:,k) = img;
     end
-    
-    model.template.nii.dat(:,:,:,k) = img;
 end
 
 % Get values to be used for FOV voxels when warping 
