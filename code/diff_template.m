@@ -24,11 +24,12 @@ if opt.template.sym
 end
 
 % Re-organise sufficient statistics to a form that is easier to work with
-Z   = max(Z,eps('single')*1000);
+% Z   = max(Z,eps('single')*1000);
 smZ = sum(Z,4);
+msk = smZ > 0;
+msk = reshape(msk,[prod(dm(1:2)) dm(3)]);
 Z   = bsxfun(@rdivide,Z,smZ + eps('single'));
-
-maxZ = max(smZ(:));
+mxZ = max(smZ(:));
 
 %--------------------------------------------------------------------------
 % Compute gradients and Hessian
@@ -41,11 +42,19 @@ ll  = 0;
 for z=1:size(Z,3) % Loop over planes
 
     % Compute softmax for this plane
-    mu = double(reshape(softmax_template(a(:,:,z,:),R,ln_prop),[dm(1:2),K]));
-%     tmp = sum(mu,3); sum(tmp(:) == 0)
-
-    % log-likelihood
-    ll  = ll - sum(sum(sum(log(mu + eps).*reshape(Z(:,:,z,:),[dm(1:2),dm(4)]),3).*smZ(:,:,z)));
+    mu = softmax_template(a(:,:,z,:),R,ln_prop);
+    
+    % Mask where sum(Z) == 0
+    mu = reshape(mu,[prod(dm(1:2)) K]);
+    for k=1:K        
+        mu(~msk(:,z),k) = NaN;        
+    end
+    
+    % Reshape and double
+    mu = double(reshape(mu,[dm(1:2) K]));
+    
+    % Compupte log-likelihood
+    ll = ll - nansum(nansum(nansum(log(mu + eps).*reshape(Z(:,:,z,:),[dm(1:2),dm(4)]),3).*smZ(:,:,z)));
             
     if ~isfinite(ll)
         warning('~isfinite(ll)');
@@ -66,7 +75,7 @@ for z=1:size(Z,3) % Loop over planes
     % Regularisation is included to enforce +ve definateness.
     hz = zeros([dm(1:2),K,K]);
     for j1=1:K
-        hz(:,:,j1,j1) =   (1-mu(:,:,j1)).*mu(:,:,j1).*smZ(:,:,z);
+        hz(:,:,j1,j1) =   (1 - mu(:,:,j1)).*mu(:,:,j1).*smZ(:,:,z);
         for j2=1:(j1-1)
             hz(:,:,j1,j2) = -mu(:,:,j1) .*mu(:,:,j2).*smZ(:,:,z);
             hz(:,:,j2,j1) = hz(:,:,j1,j2);
@@ -101,7 +110,7 @@ for z=1:size(Z,3) % Loop over planes
 
     % First pull out the diagonal of the 2nd derivs
     for j1=1:K-1
-        H(:,:,z,j1) = H(:,:,z,j1) + hz(:,:,j1,j1) + maxZ*sqrt(eps('single'))*K^2;
+        H(:,:,z,j1) = H(:,:,z,j1) + hz(:,:,j1,j1) + mxZ*sqrt(eps('single'))*K^2;
     end
 
     % Then pull out the off diagonal parts (note that matrices are symmetric)
@@ -113,4 +122,7 @@ for z=1:size(Z,3) % Loop over planes
        end
     end
 end
+
+gr(~isfinite(gr)) = 0;
+H(~isfinite(H))   = 0;
 %==========================================================================
