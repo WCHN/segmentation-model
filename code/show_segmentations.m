@@ -25,7 +25,7 @@ S0          = numel(dat);
 nrows         = min(S0,opt.verbose.mx_rows); 
 nrows_per_pop = floor(nrows/P);
 K             = opt.template.K;
-ncols         = K + 3;
+ncols         = K + 4;
 
 cnt_plots = 1;
 for p=1:P
@@ -39,32 +39,31 @@ for p=1:P
         if strcmp(population0,population)
  
             % img
-            nii = nifti(dat{s}.pth.im2d);    
-            img = single(nii.dat(:,:,:,:));                  
-            img = img';
-            
-            sb = subplot(nrows,ncols,1 + (cnt_plots - 1)*ncols);
-            if strcmpi(modality,'CT')
-                imagesc(img,[0 100]); axis off xy;
-            else
-                imagesc(img); axis off xy;
-            end
-            colormap(sb,gray)
+            nii  = nifti(dat{s}.pth.im2d);    
+            img  = single(nii.dat(:,:,:,:));                  
+            img  = img';
+            img1 = img;
             
             % bf*img
             if isfield(dat{s}.pth,'bfim2d')
-                nii = nifti(dat{s}.pth.bfim2d);    
-                img = single(nii.dat(:,:,:));
-                img = img';
-            end                        
+                nii  = nifti(dat{s}.pth.bfim2d);    
+                img  = single(nii.dat(:,:,:));
+                img  = img';
+                img1 = [img1 img];
+            end       
             
-            sb = subplot(nrows,ncols,2 + (cnt_plots - 1)*ncols);
+            sb = subplot(nrows,ncols,[1:2] + (cnt_plots - 1)*ncols);
             if strcmpi(modality,'CT')
-                imagesc(img,[0 100]); axis off xy;
+                imagesc(img1,[0 100]); axis off xy;
             else
-                imagesc(img); axis off xy;
+                imagesc(img1); axis off xy;
             end
-            colormap(sb,gray)
+            colormap(sb,gray)                             
+            
+            % Histogram            
+            subplot(nrows,ncols,3 + (cnt_plots - 1)*ncols);
+            hist(img(:),100);
+            set(gca,'ytick',[])
             
             % Z
             nii = nifti(dat{s}.pth.seg2d);    
@@ -75,7 +74,7 @@ for p=1:P
                 img = [img Z(:,:,:,k)'];
             end
 
-            sb = subplot(nrows,ncols,[3:ncols - 1] + (cnt_plots - 1)*ncols);
+            sb = subplot(nrows,ncols,[4:ncols - 1] + (cnt_plots - 1)*ncols);
             imagesc(img,[0 1]); axis off xy;             
             colormap(sb,gray)
                    
