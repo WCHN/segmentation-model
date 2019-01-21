@@ -241,7 +241,7 @@ if ~isfield(opt,'gmm')
     opt.gmm                = struct;
 end
 if ~isfield(opt.gmm,'niter') 
-    opt.gmm.niter          = 20;
+    opt.gmm.niter          = 10;
 end
 if ~isfield(opt.gmm,'tol') 
     opt.gmm.tol            = 1e-4;
@@ -280,7 +280,7 @@ if ~isfield(opt.gmm,'GaussPrior')
     opt.gmm.GaussPrior             = struct;
 end
 if ~isfield(opt.gmm.GaussPrior,'constrained') 
-    opt.gmm.GaussPrior.constrained = true;
+    opt.gmm.GaussPrior.constrained = false;
 end
 if ~isfield(opt.gmm.GaussPrior,'verbose') 
     opt.gmm.GaussPrior.verbose     = true; % [true,false]
@@ -302,7 +302,7 @@ if ~isfield(opt.gmm.labels,'S')
     opt.gmm.labels.S   = 0.99;
 end
 if ~isfield(opt.gmm.labels,'Su') 
-    opt.gmm.labels.Su  = 0.7;
+    opt.gmm.labels.Su  = 0.6;
 end
 
 % opt.template
