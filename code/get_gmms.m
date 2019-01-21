@@ -25,12 +25,13 @@ parfor s=1:S0
         %------------------------------------------------------------------                
 
         if 1
-            SHOW_FIT = 0;
+            Verbose = 0;
+            IterMax = 4;
 
             X  = double(obs{s}{1});
-            B  = double(obs{s}{2});
+            B  = double(obs{s}{2});           
 
-            [~,MU,~,~,b,V,n] = spm_gmm(X,K,B,'BinWidth',1,'GaussPrior',opt.ct.GaussPrior,'PropPrior',dat{s}.gmm.prop,'Start','prior','Verbose',SHOW_FIT,'IterMax',10);
+            [~,MU,~,~,b,V,n] = spm_gmm(X,K,B,'BinWidth',1,'GaussPrior',opt.ct.GaussPrior,'PropPrior',dat{s}.gmm.prop,'Start','prior','Verbose',Verbose,'IterMax',IterMax); 
 
             post = {{MU,b},{V,n}}; % Posteriors        
         else
@@ -46,50 +47,50 @@ parfor s=1:S0
         C    = size(X,2);        
         miss = get_par('missing_struct',X);
 
-        if opt.gmm.labels.use && isfield(dat{s},'label') && opt.gmm.labels.cm.isKey(dat{s}.population)                        
-            
-            %--------------------------------------------------------------
-            % Labels provided
-            %--------------------------------------------------------------        
-            
-            sort_pars = false;
-            
-            ix = opt.gmm.labels.cm(dat{s}.population);
-                                    
-            % Get labels
-            %--------------------------------------------------------------
-            labels = get_labels(dat{s},opt);                        
-            labs   = ix(ix~=0);
-            K_l    = numel(labs); % Number of labelled classes
-            K_nl   = K - K_l;     % Number of non-labelled classes
-            ix_bg  = max(ix) + 1;
-                
-            % Get resps for non-labelled (background) voxels
-            msk_nl = labels{1} == ix_bg;
-            % figure; imshow3D(squeeze(reshape(msk_nl ,[dm_s])))
-            X1     = X(msk_nl,:);
-            
-            Z_nl = resp_from_kmeans(X1,K_nl - sum(ix_tiny));                        
-            X1   = [];
-            
-            % Get resps for labelled voxels
-            cnt = 1;
-            Z   = zeros([size(X,1) K],'single');
-            for k=1:K
-                if ix_tiny(k)
-                    continue; 
-                end
-                
-                if ix(k)==0
-                    Z(msk_nl,k) = Z_nl(:,cnt);
-                    cnt         = cnt + 1;
-                else    
-                    Z(:,k)      = labels{1}==ix(k);
-                end
-            end
-            Z_nl   = []; 
-            msk_nl = [];
-        else                      
+%         if opt.gmm.labels.use && isfield(dat{s},'label') && opt.gmm.labels.cm.isKey(dat{s}.population)                        
+%             
+%             %--------------------------------------------------------------
+%             % Labels provided
+%             %--------------------------------------------------------------        
+%             
+%             sort_pars = false;
+%             
+%             ix = opt.gmm.labels.cm(dat{s}.population);
+%                                     
+%             % Get labels
+%             %--------------------------------------------------------------
+%             labels = get_labels(dat{s},opt);                        
+%             labs   = ix(ix~=0);
+%             K_l    = numel(labs); % Number of labelled classes
+%             K_nl   = K - K_l;     % Number of non-labelled classes
+%             ix_bg  = max(ix) + 1;
+%                 
+%             % Get resps for non-labelled (background) voxels
+%             msk_nl = labels{1} == ix_bg;
+%             % figure; imshow3D(squeeze(reshape(msk_nl ,[dm_s])))
+%             X1     = X(msk_nl,:);
+%             
+%             Z_nl = resp_from_kmeans(X1,K_nl - sum(ix_tiny));                        
+%             X1   = [];
+%             
+%             % Get resps for labelled voxels
+%             cnt = 1;
+%             Z   = zeros([size(X,1) K],'single');
+%             for k=1:K
+%                 if ix_tiny(k)
+%                     continue; 
+%                 end
+%                 
+%                 if ix(k)==0
+%                     Z(msk_nl,k) = Z_nl(:,cnt);
+%                     cnt         = cnt + 1;
+%                 else    
+%                     Z(:,k)      = labels{1}==ix(k);
+%                 end
+%             end
+%             Z_nl   = []; 
+%             msk_nl = [];
+%         else                      
             %--------------------------------------------------------------
             % No labels provided
             % Get responsibilities from kmeans labels
@@ -111,7 +112,7 @@ parfor s=1:S0
             end
             Z  = nZ;
             nZ = [];
-        end              
+%         end              
         
         % Add tiny value where resps are zero
         Z       = Z + eps;
