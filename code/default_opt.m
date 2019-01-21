@@ -258,10 +258,10 @@ if ~isfield(opt.gmm,'hist')
     opt.gmm.hist             = struct;
 end
 if ~isfield(opt.gmm.hist,'niter_main') 
-    opt.gmm.hist.niter_main  = 8;
+    opt.gmm.hist.niter_main  = 5;
 end
 if ~isfield(opt.gmm.hist,'niter_gmm') 
-    opt.gmm.hist.niter_gmm   = 4; 
+    opt.gmm.hist.niter_gmm   = 10; 
 end
 if ~isfield(opt.gmm.hist,'init_ix') 
     % For setting indices of classes (e.g. to match different modalities)
