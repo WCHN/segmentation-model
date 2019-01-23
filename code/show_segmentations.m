@@ -47,12 +47,11 @@ for p=1:P
             % bf*img
             if isfield(dat{s}.pth,'bfim2d')
                 nii  = nifti(dat{s}.pth.bfim2d);    
-                img  = single(nii.dat(:,:,:));
-                img  = img';
-                img1 = [img1 img];
+                img1 = single(nii.dat(:,:,:));
+                img1 = img1';
             end       
             
-            sb = subplot(nrows,ncols,[1:2] + (cnt_plots - 1)*ncols);
+            sb = subplot(nrows,ncols,1 + (cnt_plots - 1)*ncols);
             if strcmpi(modality,'CT')
                 imagesc(img1,[0 100]); axis off xy;
             else
@@ -60,9 +59,14 @@ for p=1:P
             end
             colormap(sb,gray)                             
             
-            % Histogram            
-            subplot(nrows,ncols,3 + (cnt_plots - 1)*ncols);
+            % Histogram (native)      
+            subplot(nrows,ncols,2 + (cnt_plots - 1)*ncols);
             hist(img(:),100);
+            set(gca,'ytick',[])
+            
+            % Histogram (corrected)      
+            subplot(nrows,ncols,3 + (cnt_plots - 1)*ncols);
+            hist(img1(:),100);
             set(gca,'ytick',[])
             
             % Z
