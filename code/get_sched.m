@@ -3,7 +3,7 @@ def = spm_shoot_defaults;
 
 if opt.template.do
     sched.gmm = opt.gmm.niter;
-    sched.reg = [128 64 def.sched];
+    sched.reg = def.sched;
     sched.eul = def.eul_its(3:end);
 else    
     sched.gmm = opt.gmm.niter;       
@@ -11,7 +11,7 @@ else
     sched.eul = Inf;
 end
 
-sched.a = [128 64 def.sched];
+sched.a = [def.sched];
 
 sched.labels = opt.gmm.labels.S;
 %==========================================================================
