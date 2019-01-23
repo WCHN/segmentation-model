@@ -18,7 +18,7 @@ GaussPrior = model.GaussPrior(dat.population);
 it_mod     = opt.model.it;
 
 % Subject parameters
-[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam] = get_obs(dat); % Image (obs) and image properties   
+[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan); % Image (obs) and image properties   
 
 modality = dat.modality{1}.name;             % Imaging modality
 I        = size(obs,1);                      % Total number of voxels

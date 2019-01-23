@@ -22,7 +22,7 @@ for s=1:S0
     ff          = get_ff(vs);               
     
     if nargin < 3
-        [~,~,~,~,scl1] = get_obs(dat{s});
+        [~,~,~,~,scl1] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan);
         scl{s}         = scl1;
     end
     

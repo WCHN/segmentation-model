@@ -82,7 +82,7 @@ else
         parfor s=1:S0 
             
             % Subject parameters
-            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam] = get_obs(dat{s});                
+            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan);                
             
             ff                        = get_ff(vs_s);     
             prop                      = dat{s}.gmm.prop;

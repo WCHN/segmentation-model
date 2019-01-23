@@ -4,7 +4,7 @@ function res = write_results(dat,model,opt)
 % Parameters
 %--------------------------------------------------------------------------
 
-[obs,dm_s,mat_s,vs_s,scl]  = get_obs(dat); 
+[obs,dm_s,mat_s,vs_s,scl]  = get_obs(dat,'mskonlynan',true); 
 [~,~,~,C,nam,~,obs_fnames] = obs_info(dat);
 miss                       = get_par('missing_struct',obs);
 dm_a                       = model.template.nii.dat.dim;
@@ -94,7 +94,7 @@ end
 % Write images (bias-field corrected)
 %--------------------------------------------------------------------------
 
-obs = get_obs(dat,'mask',false); % Get not masked images
+obs = get_obs(dat,'mask',false,'mskonlynan',opt.seg.mskonlynan); % Get not masked images
 
 if opt.write.bf(1)
     for c=1:C  
