@@ -60,23 +60,16 @@ dat = SegModel_init(dat,opt);
 %--------------------------------------------------------------------------
 
 [dat,model,opt] = init_all(dat,opt);
+model.lb        = -Inf;
 
 %--------------------------------------------------------------------------
 % Train model
 %--------------------------------------------------------------------------
 
-model.lb = -Inf;
 for it_mod=1:opt.model.niter                            
     
     [dat,model,opt,holly] = SegModel_iter(dat,model,opt,holly,it_mod);
     
-end
-
-if opt.model.clean_up
-    % Clean-up temporary files
-    rmdir(opt.dir_vel,'s');
-    rmdir(opt.dir_a_der,'s');
-    rmdir(opt.dir_seg2d,'s');
 end
 %==========================================================================
 
@@ -94,13 +87,6 @@ for it_mod=opt.model.it:opt.model.niter
     
     [dat,model,opt,holly] = SegModel_iter(dat,model,opt,holly,it_mod);
     
-end
-
-if opt.model.clean_up
-    % Clean-up temporary files
-    rmdir(opt.dir_vel,'s');
-    rmdir(opt.dir_a_der,'s');
-    rmdir(opt.dir_seg2d,'s');
 end
 %==========================================================================
 
@@ -189,6 +175,13 @@ fname = fullfile(opt.dir_model,'model.mat');
 save(fname,'model','-v7.3');
 fname = fullfile(opt.dir_model,'holly.mat');
 save(fname,'holly','-v7.3');
+
+if it_mod == opt.model.niter && opt.model.clean_up
+    % Clean-up temporary files
+    rmdir(opt.dir_vel,'s');
+    rmdir(opt.dir_a_der,'s');
+    rmdir(opt.dir_seg2d,'s');
+end
 %==========================================================================
 
 %==========================================================================
