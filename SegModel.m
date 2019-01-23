@@ -5,8 +5,11 @@ function varargout = SegModel(varargin)
 %
 %--------------------------------------------------------------------------
 %
-% SegModel('train',dat,opt)
+% opt = SegModel('train',dat,opt)
 % > Train segmentation model from a bunch of images
+%
+% opt = SegModel('continue',dat,model,opt,holly);
+% > Continue training segmentation model from a bunch of images
 %
 % res = SegModel('segment',dat,opt)
 % > Segment images with trained segmentation model
@@ -28,6 +31,8 @@ varargin = varargin(2:end);
 switch lower(id)
     case 'train'
         [varargout{1:nargout}] = SegModel_train(varargin{:});        
+    case 'continue'
+        [varargout{1:nargout}] = SegModel_continue(varargin{:});         
     case 'segment'
         [varargout{1:nargout}] = SegModel_segment(varargin{:});           
     otherwise
@@ -63,58 +68,32 @@ dat = SegModel_init(dat,opt);
 model.lb = -Inf;
 for it_mod=1:opt.model.niter                            
     
-    opt.model.it = it_mod;
+    [dat,model,opt,holly] = SegModel_iter(dat,model,opt,holly,it_mod);
     
-    % Set-up loading template derivatives from disk       
-    dat = init_load_a_der(dat,opt);
+end
 
-    % Introduce using multiple Gaussians per tissue
-    [dat,model] = introduce_lkp(dat,model,opt,it_mod);
+if opt.model.clean_up
+    % Clean-up temporary files
+    rmdir(opt.dir_vel,'s');
+    rmdir(opt.dir_a_der,'s');
+    rmdir(opt.dir_seg2d,'s');
+end
+%==========================================================================
 
-    % Do segmentation
-    [holly,dat] = distribute(holly,'segment_subject','inplace',dat,model,opt);      
+%==========================================================================
+function opt = SegModel_continue(dat,model,opt,holly)
+% Continue training segmentation model from a bunch of images
+% _______________________________________________________________________
+%  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
-    % Some model parameters changes with iteration number
-    opt = modify_opt(opt,it_mod);
+%--------------------------------------------------------------------------
+% Continue training model
+%--------------------------------------------------------------------------
 
-    % Mean correct the rigid-body transforms
-    dat = meancorrect_aff(dat,opt);
-
-    % Mean correct bias field (also updates posteriors)
-    dat = meancorrect_bf(dat,model.GaussPrior,opt);          
-
-    % Update template	    
-    model = update_template(dat,model,opt);           
-
-    % Update Gauss-Wishart hyper-parameters	    
-    model = update_GaussPrior(dat,model,opt); 
-
-    % Update proportions hyper-parameter
-    model = update_PropPrior(dat,model,opt,it_mod);
-
-    % Compute model lower bound
-    model = compute_model_lb(dat,model,opt);     
-
-    % Check convergence
-    gain = spm_misc('get_gain',model.lb);
-    if opt.verbose.model >= 1
-        fprintf('%3s | %3d | lb = %10.6f | gain = %1.5f\n', 'mod', it_mod, model.lb(end), gain);
-    end        
-
-    % Some verbose
-    if opt.verbose.model >= 2, plot_model_lb(dat,model,it_mod,opt); end
-    if opt.verbose.model >= 3, show_segmentations(dat,opt); end
-    if opt.verbose.model >= 3, show_registration(dat,opt); end
+for it_mod=opt.model.it:opt.model.niter   
     
-    % Save some variables
-    fname = fullfile(opt.dir_model,'dat.mat');
-    save(fname,'dat','-v7.3');    
-    fname = fullfile(opt.dir_model,'opt.mat');
-    save(fname,'opt','-v7.3');
-    fname = fullfile(opt.dir_model,'model.mat');
-    save(fname,'model','-v7.3');
-    fname = fullfile(opt.dir_model,'holly.mat');
-    save(fname,'holly','-v7.3');
+    [dat,model,opt,holly] = SegModel_iter(dat,model,opt,holly,it_mod);
+    
 end
 
 if opt.model.clean_up
@@ -150,6 +129,66 @@ dat = SegModel_init(dat,opt);
 %--------------------------------------------------------------------------
                
 [~,~,res] = distribute(holly,'segment_subject','inplace',dat,'iter',model,opt);  
+%==========================================================================
+
+%==========================================================================
+function [dat,model,opt,holly] = SegModel_iter(dat,model,opt,holly,it_mod)
+% Run one iteration of segmentation model
+% _______________________________________________________________________
+%  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
+
+opt.model.it = it_mod;
+
+% Set-up loading template derivatives from disk       
+dat = init_load_a_der(dat,opt);
+
+% Introduce using multiple Gaussians per tissue
+[dat,model] = introduce_lkp(dat,model,opt,it_mod);
+
+% Do segmentation
+[holly,dat] = distribute(holly,'segment_subject','inplace',dat,model,opt);      
+
+% Some model parameters changes with iteration number
+opt = modify_opt(opt,it_mod);
+
+% Mean correct the rigid-body transforms
+dat = meancorrect_aff(dat,opt);
+
+% Mean correct bias field (also updates posteriors)
+dat = meancorrect_bf(dat,model.GaussPrior,opt);          
+
+% Update template	    
+model = update_template(dat,model,opt);           
+
+% Update Gauss-Wishart hyper-parameters	    
+model = update_GaussPrior(dat,model,opt); 
+
+% Update proportions hyper-parameter
+model = update_PropPrior(dat,model,opt,it_mod);
+
+% Compute model lower bound
+model = compute_model_lb(dat,model,opt);     
+
+% Check convergence
+gain = spm_misc('get_gain',model.lb);
+if opt.verbose.model >= 1
+    fprintf('%3s | %3d | lb = %10.6f | gain = %1.5f\n', 'mod', it_mod, model.lb(end), gain);
+end        
+
+% Some verbose
+if opt.verbose.model >= 2, plot_model_lb(dat,model,it_mod,opt); end
+if opt.verbose.model >= 3, show_segmentations(dat,opt); end
+if opt.verbose.model >= 3, show_registration(dat,opt); end
+
+% Save some variables
+fname = fullfile(opt.dir_model,'dat.mat');
+save(fname,'dat','-v7.3');    
+fname = fullfile(opt.dir_model,'opt.mat');
+save(fname,'opt','-v7.3');
+fname = fullfile(opt.dir_model,'model.mat');
+save(fname,'model','-v7.3');
+fname = fullfile(opt.dir_model,'holly.mat');
+save(fname,'holly','-v7.3');
 %==========================================================================
 
 %==========================================================================
