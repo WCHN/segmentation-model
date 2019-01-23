@@ -75,25 +75,30 @@ model.template.nii = nifti(pth_template);
 
 
 if opt.template.resize && d(3) > 1
-    % Crop and change voxel sizes (3D)
+    % Crop and change voxel sizes (only for 3D)
     model = resize_template(model,opt);
     d     = model.template.nii.dat.dim;
-else
-    % Change voxel sizes (2D)
+elseif ~isempty(opt.template.vs)
+    % Change voxel sizes
     dm0  = d;
     mat0 = M;
     vx0  = sqrt(sum(mat(1:3,1:3).^2));
     vx   = opt.template.vs;
     
     % New orientation matrix and dimensions
-    ds   = vx0./vx;
+    ds = vx0./vx;
+    if d(3) == 1
+        ds(3) = 1;
+    end
+    
     D    = diag([ds 1]);
     mat  = mat0/D;
     dm   = floor(D(1:3,1:3)*dm0')';
     
     % Save down-sampled template
     model.template.nii = spm_misc('create_nii',pth_template,zeros([dm K],'single'),mat,[spm_type('float32') spm_platform('bigend')],'template');    
-    d    = dm;
+    
+    d = dm;
 end
 
 if ~isempty(opt.lesion.hemi)
