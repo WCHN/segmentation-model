@@ -36,7 +36,7 @@ for z=1:dm(3)
     slice.code    = miss.C(ix);
     slice.bin_var = (double(bf(ix,:)).^2)./12;
 
-    if size(in,2) ~= 4                     
+    if ~iscell(in)                    
         slice.Z   = double(in(ix,:));
     else        
         slice.template = double(in{1}(ix,:));
@@ -91,7 +91,7 @@ for z=1:dm(3)
     slice.code    = miss.C(ix);
     slice.bin_var = (double(bf(ix,:)).^2)./12;
     
-    if size(in,2) ~= 4   
+    if ~iscell(in)  
         slice.Z    = double(in(ix,:));        
     else        
         slice.template = double(in{1}(ix,:));
