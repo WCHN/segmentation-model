@@ -90,6 +90,7 @@ function [opt,holly] = default_opt(opt)
 % opt.seg.mrf.ml        - ML or VB MRF update
 % opt.seg.mrf.val_diag  - Value on the diagonal of the MRF confusion matrix
 % opt.seg.mrf.alpha     - Parameter of VB MRF
+% opt.seg.mskonlynan    - Only mask NaN values in observed images
 %
 % BIAS FIELD
 % ----------
@@ -219,7 +220,7 @@ if ~isfield(opt.model,'tol')
     opt.model.tol     = 1e-4;
 end
 if ~isfield(opt.model,'niter') 
-    opt.model.niter   = 30;
+    opt.model.niter   = 20;
 end
 if ~isfield(opt.model,'nam_cls') 
     opt.model.nam_cls = {};
@@ -457,6 +458,9 @@ end
 if ~isfield(opt.seg.mrf,'alpha')
     opt.seg.mrf.alpha    = 1e5;
 end
+if ~isfield(opt.seg,'mskonlynan')
+    opt.seg.mskonlynan   = false;
+end
 
 % opt.bf
 if ~isfield(opt,'bf') 
@@ -486,25 +490,25 @@ end
 
 % opt.prop
 if ~isfield(opt,'prop') 
-    opt.prop       = struct;
+    opt.prop         = struct;
 end
 if ~isfield(opt.prop,'niter')
-    opt.prop.niter = 3;
+    opt.prop.niter   = 3;
 end
 if ~isfield(opt.prop,'gnniter')
     opt.prop.gnniter = 1;
 end
 if ~isfield(opt.prop,'tol')
-    opt.prop.tol   = 1e-4;
+    opt.prop.tol     = 1e-4;
 end
 if ~isfield(opt.prop,'reg')     
-    opt.prop.reg   = 1;
+    opt.prop.reg     = 1;
 end
 if opt.prop.reg <= 0
     error('opt.prop.reg <= 0');
 end
 if ~isfield(opt.prop,'do')
-    opt.prop.do    = true;
+    opt.prop.do      = true;
 end
 
 % opt.nline_search
@@ -726,9 +730,9 @@ if opt.template.do
     opt.bf.mc_bf_verbose = true;     
     
     opt.start_it.do_mg      = 1;
-    opt.start_it.upd_mg     = 5; % 5
-    opt.start_it.do_prop    = 5; % 5    
-    opt.start_it.do_upd_mrf = 5;
+    opt.start_it.upd_mg     = 3; % 5
+    opt.start_it.do_prop    = 3; % 5    
+    opt.start_it.do_upd_mrf = 3;
 end
 
 opt.dir_output_train = fullfile(opt.dir_output,'train');
