@@ -4,9 +4,8 @@ function res = write_results(dat,model,opt)
 % Image data, etc
 %--------------------------------------------------------------------------
 
-% mskonlynan = true -> to include full template in resp calculation
-% subsample  = 0    -> to work with the original size image (not a sub-sampled version)
-[obs,dm_s,mat_s,vs_s,scl] = get_obs(dat,'mskonlynan',false,'samp',0); 
+% samp = 0 -> to here work with the original size image (not a sub-sampled version)
+[obs,dm_s,mat_s,vs_s,scl] = get_obs(dat,'samp',0); 
 
 [~,~,~,C,nam,~,obs_fnames] = obs_info(dat);
 dm_a                       = model.template.nii.dat.dim;
@@ -181,28 +180,6 @@ if opt.write.bf(1)
     end
 end
 
-% %--------------------------------------------------------------------------
-% % Compute inverse deformation (iy)
-% %--------------------------------------------------------------------------
-% 
-% if opt.write.bf(3) || opt.clean.les.cnn_mrf.do || any(opt.write.tc(:,3) == true) || opt.clean.les.bwlabeln
-%     if isempty(Greens)
-%         [~,~,~,iy] = spm_shoot3d(v,prm_v,[opt.reg.int_args [3 3]]);
-%     else
-%         [~,~,~,iy] = spm_shoot3d(v,prm_v,[opt.reg.int_args [3 3]],Greens);
-%     end            
-%     
-%     % Affine = Mt\Mr*Ms
-% %     iy = spm_warps('compose',iy,inv(Affine),single(spm_warps('identity',dm_a(1:3))));    
-%     iy = spm_warps('compose',iy,inv(Affine*subsmp.MT),single(spm_warps('identity',dm_a(1:3))));      
-%     iy = bsxfun(@mtimes,iy,subsmp.sk4);
-% 
-%     if dm_s(3) == 1
-%         iy(:,:,:,3) = 1;
-%     end    
-% end
-% clear Greens v
-
 %--------------------------------------------------------------------------
 % Write bias-field corrected images, warped to MNI space
 %--------------------------------------------------------------------------
@@ -229,27 +206,6 @@ if opt.write.bf(3)
         Nii.dat(:,:,:) = single(x);        
     end    
 end
-% if opt.write.bf(3)
-%     for c=1:C    
-%         Nii         = nifti;
-%         Nii.dat     = file_array(fullfile(dat.dir.img,['MNI_Corrected_', nam{c}, '.nii']),...
-%                                  dm_a(1:3),...
-%                                  [spm_type('float32') spm_platform('bigend')],...
-%                                  0,1,0);
-%         Nii.mat     = mat_a;
-%         Nii.mat0    = mat_a;
-%         Nii.descrip = 'Bias Field Corrected Image in MNI space';
-%         create(Nii);
-% 
-%         x               = spm_diffeo('pull', reshape(obs(:,c),dm_s), iy);
-%         x(~isfinite(x)) = 0;
-%         if strcmpi(modality,'MRI')
-%             x(x < 0)    = 0;
-%         end
-%         
-%         Nii.dat(:,:,:) = single(x);        
-%     end    
-% end
 clear obs x iy c
 
 %--------------------------------------------------------------------------
@@ -320,6 +276,14 @@ if isempty(opt.lesion.hemi) && (opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.
 %         prd = logical(les_msk);        
 %         fprintf('ds=%0.3f\n',dice(prd,gt));
 %     end
+end
+
+%--------------------------------------------------------------------------
+% Write DARTEL imports
+%--------------------------------------------------------------------------
+
+if opt.write.import && dm_s(3) > 1 
+    write_dartel(Z,y,mat_s,dm_s,dm_a,mat_a,vs_a,vs_s,dat.dir.seg,nam{1},opt);
 end
 
 %--------------------------------------------------------------------------
@@ -427,10 +391,6 @@ K       = max(part.lkp);
 const   = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
 ix_tiny = get_par('ix_tiny',dat.population,part.lkp,opt);
 
-%----------------------------------------------------------------------
-% Get full responsibilities
-%----------------------------------------------------------------------
-
 % Neighborhood part
 lnPzN = gmm_mrf('apply',dat.mrf);
 
@@ -502,4 +462,108 @@ lnpX(:,ix_tiny) = lntiny;
 
 % Compute responsibilities
 Z = spm_gmm_lib('Responsibility', lnpX,  lnPI,         lnDetbf,   lnPl,log(mg),lnPzN);   
+%==========================================================================
+
+%==========================================================================
+function write_dartel(Z,y,mat_s,dm_s,dm_a,mat_a,vx_a,vx_s,pth,nam,opt)
+% FORMAT write_dartel(Z,y,mat_s,dm_s,dm_a,mat_a,vx_a,vx_s,pth,nam,opt)
+%
+% Write segmentations ready for DARTEL import.
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
+K       = size(Z,4);
+[~,fg0] = get_par('bg_fg',opt.seg.bg,K);
+
+% Generate mm coordinates of where deformations map from
+x = affind(rgrid(dm_s(1:3)),mat_s);
+
+% Generate mm coordinates of where deformation maps to
+y1 = affind(y,mat_a);
+clear y
+
+% Procrustes analysis to compute the closest rigid-body
+% transformation to the deformation, weighted by the
+% interesting tissue classes.
+[dummy,R] = spm_get_closest_affine(x,y1,Z(:,:,:,fg0(1)));
+clear x y1
+
+% Voxel-to-world of original image space
+mat0 = R\mat_a; 
+
+fwhm = max(vx_a./vx_s - 1,0.01);
+for k=1:K  
+    % Low pass filtering to reduce aliasing effects in downsampled images,
+    % then reslice and write to disk
+    tmp1 = decimate(Z(:,:,:,k),fwhm);
+    
+    % Create NIfTI
+    Ni      = nifti;
+    Ni.dat  = file_array(fullfile(pth,['rc', num2str(k), nam, '.nii']),...
+                         dm_a(1:3),...
+                         [spm_type('float32') spm_platform('bigend')],...
+                         0,1,0);
+    Ni.mat         = mat_a;
+    Ni.mat_intent  = 'Aligned';
+    Ni.mat0        = mat0;
+    Ni.mat0_intent = 'Aligned';
+    Ni.descrip     = ['Imported Tissue ' num2str(k)];
+    create(Ni);
+
+    for z=1:dm_a(3)
+        tmp           = spm_slice_vol(tmp1,mat_s\mat0*spm_matrix([0 0 z]),dm_a(1:2),[1,NaN]);
+        Ni.dat(:,:,z) = tmp;
+    end
+    clear tmp1
+end
+%==========================================================================
+
+%==========================================================================
+function dat = decimate(dat,fwhm)
+% FORMAT dat = decimate(dat,fwhm)
+%
+% Helper function for write_dartel()
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
+% Convolve the volume in memory (fwhm in voxels).
+lim = ceil(2*fwhm);
+x  = -lim(1):lim(1); x = spm_smoothkern(fwhm(1),x); x  = x/sum(x);
+y  = -lim(2):lim(2); y = spm_smoothkern(fwhm(2),y); y  = y/sum(y);
+z  = -lim(3):lim(3); z = spm_smoothkern(fwhm(3),z); z  = z/sum(z);
+i  = (length(x) - 1)/2;
+j  = (length(y) - 1)/2;
+k  = (length(z) - 1)/2;
+spm_conv_vol(dat,dat,x,y,z,-[i j k]);
+%==========================================================================
+
+%==========================================================================
+function y1 = affind(y0,M)
+% FORMAT y1 = affind(y0,M)
+%
+% Helper function for write_dartel()
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
+y1 = zeros(size(y0),'single');
+for d=1:3
+    y1(:,:,:,d) = y0(:,:,:,1)*M(d,1) + y0(:,:,:,2)*M(d,2) + y0(:,:,:,3)*M(d,3) + M(d,4);
+end
+%==========================================================================
+
+%==========================================================================
+function x = rgrid(d)
+% FORMAT x = rgrid(d)
+%
+% Helper function for write_dartel()
+%__________________________________________________________________________
+% Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
+x = zeros([d(1:3) 3],'single');
+[x1,x2] = ndgrid(single(1:d(1)),single(1:d(2)));
+for i=1:d(3)
+    x(:,:,i,1) = x1;
+    x(:,:,i,2) = x2;
+    x(:,:,i,3) = single(i);
+end
 %==========================================================================

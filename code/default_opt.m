@@ -171,6 +171,7 @@ function [opt,holly] = default_opt(opt)
 % opt.write.df          - Write initial velocities?
 % opt.write.ml          - Write maximum-likelihood labels?
 % opt.write.les         - Write lesion masks?
+% opt.write.import      - Write DARTEL imports?
 % opt.dir_output_train  - Folder to write model (= population) data
 % opt.dir_output_seg    - Folder to write segmentation (= subject) data
 %
@@ -312,7 +313,7 @@ if ~isfield(opt,'template')
     opt.template              = struct;
 end
 if ~isfield(opt.template,'do')
-    opt.template.do           = false;
+    opt.template.do           = true;
 end
 if ~isfield(opt,'sched') 
     opt.sched = get_sched(opt);
@@ -443,10 +444,10 @@ if ~isfield(opt.seg,'samp')
     opt.seg.samp           = 0;
 end
 if ~isfield(opt.seg,'bg')
-    opt.seg.bg             = opt.template.K;
+    opt.seg.bg             = 1;
 end
 if ~isfield(opt.seg,'mskonlynan')
-    opt.seg.mskonlynan   = false;
+    opt.seg.mskonlynan     = false;
 end
 
 % opt.seg.mrf
@@ -644,22 +645,25 @@ end
 
 % opt.write
 if ~isfield(opt,'write') 
-    opt.write     = struct;
+    opt.write        = struct;
 end
 if ~isfield(opt.write,'tc')
-    opt.write.tc  = true(opt.template.K,3); % [native-orig,native-final,template-final]
+    opt.write.tc     = true(opt.template.K,3); % [native-orig,native-final,template-final]
 end
 if ~isfield(opt.write,'bf')
-    opt.write.bf  = true(1,3); % [native-im,bf,template-im]
+    opt.write.bf     = true(1,3); % [native-im,bf,template-im]
 end
 if ~isfield(opt.write,'df')
-    opt.write.df  = true;
+    opt.write.df     = true;
 end
 if ~isfield(opt.write,'ml')
-    opt.write.ml  = false;
+    opt.write.ml     = false;
 end
 if ~isfield(opt.write,'les')
-    opt.write.les = true(1,2);
+    opt.write.les    = true(1,2);
+end
+if ~isfield(opt.write,'import')
+    opt.write.import = false;
 end
 
 % opt.dict
