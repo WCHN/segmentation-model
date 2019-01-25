@@ -95,7 +95,7 @@ scl = cell(1,S0);
 bw  = cell(1,S0);
 parfor s=1:S0  
     modality             = dat{s}.modality{1}.name;
-    [obs_s,~,~,~,scl{s}] = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan);
+    [obs_s,~,~,~,scl{s}] = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
     obs_s                = double(obs_s);
     C                    = size(obs_s,2);
     

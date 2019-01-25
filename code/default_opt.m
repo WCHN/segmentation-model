@@ -11,7 +11,7 @@ function [opt,holly] = default_opt(opt)
 % GENERAL
 % -------
 % opt.sched
-%
+%mskonlynan
 % MODEL
 % -----
 % opt.model.it           - Number of current VEM iterations
@@ -90,6 +90,7 @@ function [opt,holly] = default_opt(opt)
 % opt.seg.mrf.ml        - ML or VB MRF update
 % opt.seg.mrf.val_diag  - Value on the diagonal of the MRF confusion matrix
 % opt.seg.mrf.alpha     - Parameter of VB MRF
+% opt.seg.mrf.niter     - Number of MRF update iterations
 % opt.seg.mskonlynan    - Only mask NaN values in observed images
 %
 % BIAS FIELD
@@ -242,7 +243,7 @@ if ~isfield(opt,'gmm')
     opt.gmm                = struct;
 end
 if ~isfield(opt.gmm,'niter') 
-    opt.gmm.niter          = 10;
+    opt.gmm.niter          = 20;
 end
 if ~isfield(opt.gmm,'tol') 
     opt.gmm.tol            = 1e-4;
@@ -444,6 +445,9 @@ end
 if ~isfield(opt.seg,'bg')
     opt.seg.bg             = opt.template.K;
 end
+if ~isfield(opt.seg,'mskonlynan')
+    opt.seg.mskonlynan   = false;
+end
 
 % opt.seg.mrf
 if ~isfield(opt.seg,'mrf') 
@@ -458,8 +462,8 @@ end
 if ~isfield(opt.seg.mrf,'alpha')
     opt.seg.mrf.alpha    = 1e5;
 end
-if ~isfield(opt.seg,'mskonlynan')
-    opt.seg.mskonlynan   = false;
+if ~isfield(opt.seg.mrf,'niter')
+    opt.seg.mrf.niter    = 1;
 end
 
 % opt.bf
@@ -470,7 +474,7 @@ if ~isfield(opt.bf,'biasfwhm')
     opt.bf.biasfwhm      = 60;
 end
 if ~isfield(opt.bf,'niter')
-    opt.bf.niter         = 3;
+    opt.bf.niter         = 8;
 end
 if ~isfield(opt.bf,'tol')
     opt.bf.tol           = 1e-4;
@@ -479,7 +483,7 @@ if ~isfield(opt.bf,'mc_bf')
     opt.bf.mc_bf         = false;
 end
 if ~isfield(opt.bf,'biasreg')
-    opt.bf.biasreg       = 1e6;
+    opt.bf.biasreg       = 1e4;
 end
 if ~isfield(opt.bf,'do')
     opt.bf.do            = true;

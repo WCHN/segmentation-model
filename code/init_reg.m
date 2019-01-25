@@ -27,9 +27,28 @@ Nr                  = size(B,3);
 opt.reg.B           = B;
 opt.reg.aff_reg_ICO = opt.reg.aff_reg*eye(Nr);
 
-for s=1:S0
-    [dm,mat] = obs_info(dat{s});
+% Adjust ICO so that we do not regularise rigid part
+if dm(3) > 1
+    % 3D: Six translation and rotation parameters
+    M = diag([zeros(1,6) ones(1,Nr - 6)]);
+else
+    % 2D: Three translation and rotation parameters
+    M = diag([zeros(1,3) ones(1,Nr - 3)]);
+end
+opt.reg.aff_reg_ICO = M.*opt.reg.aff_reg_ICO;
 
+% Loop over all subjects
+for s=1:S0
+    % Subject image info
+    [dm,mat,vs] = obs_info(dat{s});
+    
+    % If subsampling (samp > 0), adjust dimensions of velocities
+    % accordingly
+    subsamp = get_subsampling_grid(dm,vs,opt.seg.samp);
+    dm      = subsamp.dm;
+    clear subsamp
+    
+    % Create velocities
     v = zeros([dm(1:3),3],'single');
     if opt.template.do
         pth_v        = fullfile(opt.dir_vel,['v' num2str(s) '.nii']);
@@ -45,6 +64,7 @@ for s=1:S0
         end
     end
     
+    % Create affine parameters
     dat{s}.reg.r = zeros([Nr,1]);
 end
 %==========================================================================

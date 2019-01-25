@@ -93,7 +93,7 @@ if dm(3)==1
         set(gca, 'clim', [0.5 K+0.5]);
         set(cb, 'ticks', 1:K, 'ticklabels', ticklabels); 
 
-        if ~isempty(title_nam{c})
+        if numel(title_nam) == c && ~isempty(title_nam{c})
             title(title_nam{c})
         end
     end    
@@ -209,7 +209,7 @@ else
         imagesc(slice); axis off xy;  
         colormap(gca,colors)
 
-        if ~isempty(title_nam{c})
+        if numel(title_nam) == c && ~isempty(title_nam{c})
             title(title_nam{c})
         end
 
@@ -221,7 +221,7 @@ else
         imagesc(slice); axis off xy;  
         colormap(gca,colors)
 
-        if ~isempty(title_nam{c})
+        if numel(title_nam) == c && ~isempty(title_nam{c})
             title(title_nam{c})
         end
 
@@ -234,7 +234,7 @@ else
         imagesc(slice); axis off xy;  
         colormap(gca,colors)
 
-        if ~isempty(title_nam{c})
+        if  numel(title_nam) == c && ~isempty(title_nam{c})
             title(title_nam{c})
         end
 

@@ -1,6 +1,6 @@
-function [dat,Affine,template,gain] = update_affine(dat,model,obs,template,bf,labels,mat_a,mat_s,y,dm,scl,miss,opt,comp_lb)
+function [dat,Affine,template,gain] = update_affine(dat,model,obs,template,bf,labels,mat_a,mat_s,y,dm,scl,miss,opt,subsamp,comp_lb)
 
-if nargin < 14, comp_lb = false; end
+if nargin < 15, comp_lb = false; end
 
 % Parse input
 r       = dat.reg.r;
@@ -15,17 +15,9 @@ part    = dat.gmm.part;
 K      = size(template,2);
 Nr     = numel(r);
 [E,dE] = spm_dexpm(r,B);
-Affine = mat_a\E*mat_s;
+Affine = (mat_a\E*mat_s)*subsamp.MT;
 const  = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
 ix_tiny = get_par('ix_tiny',dat.population,part.lkp,opt);
-
-% if armijo < 1e-6
-%     % Already found optimal solution
-%     dat.armijo.aff = min(armijo*1.25,1);
-%     gain           = 0;
-%     
-%     return; 
-% end
 
 %--------------------------------------------------------------------------
 % Compute objective function and its first and second derivatives
@@ -155,7 +147,7 @@ for line_search=1:nline_search
     % Update affine matrix
     r      = r - armijo*Update;
     E      = spm_dexpm(r,B);
-    Affine = mat_a\E*mat_s;
+    Affine = (mat_a\E*mat_s)*subsamp.MT;
     
     % Compute new lower bound
     aff_reg = double(-0.5*r(:)'*ICO*r(:));    
@@ -178,7 +170,7 @@ for line_search=1:nline_search
         
         if line_search == nline_search                  
               E      = spm_dexpm(r,B);
-              Affine = mat_a\E*mat_s;
+              Affine = (mat_a\E*mat_s)*subsamp.MT;
     
               template = oTemplate; 
         end

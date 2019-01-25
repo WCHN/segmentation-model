@@ -60,7 +60,7 @@ for s=1:S0
     %--------------------------------------------------------------------------
 
     % Subject info
-    [X,~,~,~,~,~,~,mn,mx]     = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan);   
+    [X,~,~,~,~,~,~,mn,mx]     = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
     [~,~,~,C,~,~,~,chn_names] = obs_info(dat{s});    
 
     % Uninformative VBGMM hyper-parameters

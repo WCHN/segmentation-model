@@ -43,7 +43,7 @@ parfor s=1:S0
         % Initilisation of GMMs when data is MRI
         %------------------------------------------------------------------
         
-        X    = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan);    
+        X    = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan); % Do not subsample!   
         C    = size(X,2);        
         miss = get_par('missing_struct',X);
 

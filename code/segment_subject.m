@@ -18,7 +18,7 @@ GaussPrior = model.GaussPrior(dat.population);
 it_mod     = opt.model.it;
 
 % Subject parameters
-[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan); % Image (obs) and image properties   
+[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp);
 
 modality = dat.modality{1}.name;             % Imaging modality
 I        = size(obs,1);                      % Total number of voxels
@@ -37,35 +37,13 @@ else
     bf = 1;                                    
 end
 
-if it_mod > 1
-    % Adjust lower bound when building template
-    %----------------------------------------------------------------------    
-    append2lb = false;
- 
-    if do_bf && opt.bf.mc_bf
-        % Bias field has been mean corrected
-        lblnDetbf                   = bf;
-        lblnDetbf(isnan(lblnDetbf)) = 1;        
-        lblnDetbf                   = log(prod(lblnDetbf,2));  
-        lblnDetbf                   = sum(lblnDetbf);
-        
-        dat.lb.lnDetbf(end + 1)  = lblnDetbf;
-        
-        append2lb = true;
-    end
-
-    if opt.model.PropPrior.do && it_mod > opt.start_it.do_prop
-        % Tissue proportion prior has been updated
-        dat.lb.prop_reg(end + 1) = dot(PropPrior.alpha - 1,log(spm_matcomp('softmax',dat.gmm.prop) + eps));
-        
-        append2lb = true;
-    end
-    
-    if append2lb
-        % Append lower bound
-        dat.lb = check_convergence('ini',dat.lb,1,opt.verbose.gmm);
-    end
-end
+% Adjust lower bound
+lblnDetbf                   = bf;
+lblnDetbf(isnan(lblnDetbf)) = 1;        
+lblnDetbf                   = log(prod(lblnDetbf,2));  
+lblnDetbf                   = sum(lblnDetbf);
+dat.lb.lnDetbf(end + 1)     = lblnDetbf; % Bias field ln|Bf|
+dat.lb.prop_reg(end + 1)    = dot(PropPrior.alpha - 1,log(spm_matcomp('softmax',dat.gmm.prop) + eps)); % Tissue prop prior
 
 % Get initial velocities
 %--------------------------------------------------------------------------
@@ -74,7 +52,7 @@ else,                    v = single(dat.reg.v.dat(:,:,:,:));
 end
 
 % FFT of Green's function
-prm_v                           = [vs_s ff*opt.reg.rparam*prod(vs_s)];
+prm_v                           = [subsmp.sk.*vs_s ff*opt.reg.rparam*prod(subsmp.sk.*vs_s)];
 if opt.reg.int_args > 1, Greens = spm_shoot_greens('kernel',dm_s(1:3),prm_v);
 else,                    Greens = [];
 end
@@ -107,7 +85,7 @@ if ~opt.template.do && dm_s(3) > 1
     dat = maffreg_template2subject(dat,model,opt);
     
     E      = spm_dexpm(dat.reg.r,opt.reg.B);
-    Affine = model.template.nii.mat\E*mat_s;
+    Affine = (model.template.nii.mat\E*mat_s)*subsmp.MT;
 
     % Warp template to subject      
     Template = warp_template(model,y,Affine);
@@ -116,7 +94,7 @@ elseif it_mod == 1 && opt.reg.do_aff
 
     % Affine matrix    
     E      = spm_dexpm(dat.reg.r,opt.reg.B);
-    Affine = mat_a\E*mat_s;
+    Affine = (mat_a\E*mat_s)*subsmp.MT;
 
     % Warp template to subject
     Template = warp_template(model,y,Affine);  
@@ -134,7 +112,7 @@ elseif it_mod == 1 && opt.reg.do_aff
             clear Z
         end
         
-        [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt,true);
+        [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt,subsmp,true);
         
         if gain < opt.reg.init_aff_tol
             % Finished updating registration
@@ -148,7 +126,7 @@ else
     
     % Affine matrix    
     E      = spm_dexpm(dat.reg.r,opt.reg.B);
-    Affine = mat_a\E*mat_s;
+    Affine = (mat_a\E*mat_s)*subsmp.MT;
 
     % Warp template to subject
     Template = warp_template(model,y,Affine);  
@@ -224,7 +202,8 @@ for it_seg=1:opt.seg.niter
             
     updt_mg = do_mg & it_mod >= opt.start_it.upd_mg;
     
-    for it_bf=1:opt.bf.niter                 
+    for it_bf=1:opt.bf.niter       
+        
         % Start with updating GMM parameters
         dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);                   
                               
@@ -256,7 +235,8 @@ for it_seg=1:opt.seg.niter
             prop_niter = opt.prop.niter(min(numel(opt.prop.niter),iter));            
         end
 
-        for it_prop=1:prop_niter         
+        for it_prop=1:prop_niter 
+            
             % Start with updating GMM parameters
             dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);                               
 
@@ -281,11 +261,10 @@ for it_seg=1:opt.seg.niter
     %----------------------------------------------------------------------
     
     if opt.do.update_mrf && opt.do.mrf && (it_mod >= opt.start_it.do_upd_mrf || it_seg >= opt.start_it.do_upd_mrf)
-        for it_mrf=1:2
+        for it_mrf=1:opt.seg.mrf.niter  
+            
             % Start with updating GMM parameters
             dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);                   
-
-%             if it_mrf == 2, break; end        
 
             % Update MRF weights        
             dat = update_mrf(dat,obs,bf,Template,dm_s,labels,scl,miss,opt);                    
@@ -311,7 +290,7 @@ for it_seg=1:opt.seg.niter
                 dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt); 
                 
                 % Update affine parameters                                
-                [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt);               
+                [dat,Affine,Template,gain] = update_affine(dat,model,obs,Template,bf,labels,mat_a,mat_s,y,dm_s,scl,miss,opt,subsmp);               
             
                 if opt.verbose.gmm >= 3
                     show_seg(obs,Template,dat.gmm.prop, ...
@@ -326,7 +305,7 @@ for it_seg=1:opt.seg.niter
                 dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt); 
                 
                 % Update initial velocities                                                  
-                [dat,y,v,Template,Greens,gain,opt] = update_nonlin(dat,model,obs,Template,bf,labels,v,y,Affine,Greens,it_seg,it_mod,scl,miss,opt);                
+                [dat,y,v,Template,Greens,gain,opt] = update_nonlin(dat,model,obs,Template,bf,labels,v,y,Affine,Greens,it_seg,it_mod,scl,miss,dm_s,vs_s,subsmp,opt);                
 
                 if opt.verbose.gmm >= 3
                     show_seg(obs,Template,dat.gmm.prop, ...
@@ -424,7 +403,7 @@ if do_nl
 end
 clear v
 
-if    opt.template.do && opt.template.load_a_der
+if opt.template.do && opt.template.load_a_der
     %----------------------------------------------------------------------
     % Compute template derivatives (will be loaded later in
     % update_template)

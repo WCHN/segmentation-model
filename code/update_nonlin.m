@@ -1,4 +1,4 @@
-function [dat,y,v,template,Greens,gain,opt] = update_nonlin(dat,model,obs,template,bf,labels,v,y,Affine,Greens,it_seg,it_template,scl,miss,opt)
+function [dat,y,v,template,Greens,gain,opt] = update_nonlin(dat,model,obs,template,bf,labels,v,y,Affine,Greens,it_seg,it_template,scl,miss,dm,vs,subsmp,opt)
 
 % Parse input
 prop     = dat.gmm.prop;
@@ -6,23 +6,15 @@ cluster  = dat.gmm.cluster;
 armijo   = dat.armijo.nl;
 int_args = opt.reg.int_args;
 verbose  = opt.verbose.reg;
-part    = dat.gmm.part;
+part     = dat.gmm.part;
+sk       = subsmp.sk;
 
 % Parameters
-[dm,~,vs] = obs_info(dat);
 ff        = get_ff(vs);      
 K         = size(template,2);
 lkp       = [1 4 5; 4 2 6; 5 6 3];
 const     = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
 ix_tiny   = get_par('ix_tiny',dat.population,part.lkp,opt);
-
-% if armijo < 1e-6
-%     % Already found optimal solution
-%     dat.armijo.nl = min(armijo*1.25,1);
-%     gain          = 0;
-%     
-%     return; 
-% end
 
 %--------------------------------------------------------------------------
 % Compute objective function and its first and second derivatives
@@ -60,9 +52,6 @@ for z=1:dm(3)
     
     % Compute responsibilities and lb
     [Z,dlb] = gmm_img('slice_resp_and_lb',slice,cluster{1},cluster{2},prop,part,miss,const,lnPzNz,ix_tiny,dlb);
-
-    % Compute sufficient statistics 
-%     mom = gmm_img('slice_mom',mom,Z,slice,miss,BX);
 
     % Map cluster responsibilities to tissue responsibilities
     Z = cluster2template(Z,part);              
@@ -116,20 +105,6 @@ for z=1:dm(3)
 end
 clear J y1 Z Template0
 
-% lbX = spm_gmm_lib('MarginalSum', mom.SS0, mom.SS1, mom.SS2, cluster{1}, cluster{2}, miss.L, mom.SS2b);    
-
-% dat.lb.X(end + 1)       = lbX;     
-% dat.lb.Z(end + 1)       = dlb.Z;   
-% if numel(part.mg) > numel(prop)
-%     dat.lb.mg(end + 1)  = dlb.mg;   
-% end
-% if ~isempty(labels)
-%     dat.lb.lab(end + 1) = dlb.lab;
-% end
-% if dat.mrf.do   
-%     dat.lb.ZN(end + 1)  = gmm_mrf('lowerbound',dat.mrf);
-% end
-
 % Non-linear registration parameters can change with iteration number...
 if opt.template.do
     % learning
@@ -139,13 +114,11 @@ else
     [opt,nscl,oscl] = modify_opt(opt,it_seg);     
 end
 
-prm  = [vs ff*opt.reg.rparam*prod(vs)];
+prm  = [sk.*vs ff*opt.reg.rparam*prod(sk.*vs)];
 
 if int_args > 1
     % Large deformation
-    Greens   = spm_shoot_greens('kernel',dm(1:3),prm); 
-%     y        = make_deformation(v,prm,int_args,Greens);
-%     Template = warp_template(model,y,Affine);    
+    Greens = spm_shoot_greens('kernel',dm(1:3),prm); 
 end   
 
 % Add regularisation and compute GN step

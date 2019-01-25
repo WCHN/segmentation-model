@@ -75,32 +75,37 @@ else
     %----------------------------------------------------------------------
     
     for iter=1:opt.template.niter
+        
         H  = zeros([dm(1:3) round(((K-1)*K)/2)],'single'); % 2nd derivatives
         gr = zeros([dm(1:3),K-1],'single');                % 1st derivatives    
-        ll = 0;
+        ll = 0;                                            % Template log-likelihood
+        
 %         for s=1:S0
         parfor s=1:S0 
             
             % Subject parameters
-            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan);                
+            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp);                
             
-            ff                        = get_ff(vs_s);     
-            prop                      = dat{s}.gmm.prop;
-            prm_v                     = [vs_s ff*prm_reg];
+            labels   = get_labels(dat{s},opt);
+            miss     = get_par('missing_struct',obs);
+            ff       = get_ff(vs_s);     
+            prop     = dat{s}.gmm.prop;
+            prm_v    = [subsmp.sk.*vs_s ff*prm_reg*prod(subsmp.sk.*vs_s)];
             if isnumeric(dat{s}.reg.v)
-                v                     = dat{s}.reg.v;                            % Initial velocity stored in array
+                % Initial velocity stored in array
+                v    = dat{s}.reg.v;              
             else
-                v                     = single(dat{s}.reg.v.dat(:,:,:,:));       % Initial velocity read from NIfTI
+                % Initial velocity read from NIfTI
+                v    = single(dat{s}.reg.v.dat(:,:,:,:));       
             end            
-            modality                  = dat{s}.modality{1}.name; 
-            do_bf                     = opt.bf.do && strcmpi(modality,'MRI');
+            modality = dat{s}.modality{1}.name; 
+            
+            do_bf  = opt.bf.do && strcmpi(modality,'MRI');
             if do_bf || strcmpi(modality,'MRI') 
-                bf              = get_bf(dat{s}.bf.chan,dm_s);
+                bf = get_bf(dat{s}.bf.chan,dm_s);
             else     
-                bf              = 1;
-            end
-            labels                    = get_labels(dat{s},opt);
-            miss                      = get_par('missing_struct',obs);
+                bf = 1;
+            end                        
 
             % Build and apply FFT of Green's function to map from momentum
             % to velocity (if opt.reg.int_args > 1)                       
@@ -116,7 +121,7 @@ else
             
             % Compute affine transformation matrix
             E      = spm_dexpm(dat{s}.reg.r,B); % Compute matrix exponential
-            Affine = mat_a\E*mat_s;   
+            Affine = (mat_a\E*mat_s)*subsmp.MT;   
 
             % Warp template to subject and softmax       
             [Template,y] = warp_template(model,y,Affine);              

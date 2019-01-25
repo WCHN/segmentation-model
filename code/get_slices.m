@@ -29,7 +29,7 @@ modality = dat.modality{1}.name; % Imaging modality
 % Get image data
 %--------------------------------------------------------------------------
 
-[obs,dm,~,~,scl] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan);
+[obs,dm,~,~,scl] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp);
 
 %--------------------------------------------------------------------------
 % Missing data struct

@@ -86,15 +86,14 @@ elseif ~isempty(opt.template.vs)
     vx   = opt.template.vs;
     
     % New orientation matrix and dimensions
-    ds = vx0./vx;
+    ds  = vx0./vx;
+    D   = diag([ds 1]);
+    mat = mat0/D;
+    dm  = floor(D(1:3,1:3)*dm0')';
     if d(3) == 1
-        ds(3) = 1;
+        dm(3) = 1;
     end
-    
-    D    = diag([ds 1]);
-    mat  = mat0/D;
-    dm   = floor(D(1:3,1:3)*dm0')';
-    
+
     % Save down-sampled template
     model.template.nii = spm_misc('create_nii',pth_template,zeros([dm K],'single'),mat,[spm_type('float32') spm_platform('bigend')],'template');    
     

@@ -32,14 +32,6 @@ const       = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L); % GMM likeli
 ix_tiny     = get_par('ix_tiny',dat.population,part.lkp,opt);      % Labels to template mapping
 
 for c=1:nb_channels % Loop over channels
-
-%     if armijo(c) < 1e-6
-%         % Already found optimal solution
-%         armijo(c) = min(armijo(c)*1.25,1);
-%         dat.lb    = check_convergence('bf',dat.lb,c,verbose,armijo(c)); 
-%         
-%         continue; 
-%     end
     
     % Neighborhood part
     lnPzN = gmm_mrf('apply',dat.mrf);
@@ -200,7 +192,7 @@ for c=1:nb_channels % Loop over channels
             armijo(c) = min(armijo(c)*1.25,1);
 
             dat.lb.X(end + 1)        = dlb.X;                    
-            dat.lb.lnDetbf(end + 1)  = lblnDetbf;  
+            dat.lb.lnDetbf(end + 1)  = lblnDetbf;
             dat.lb.bf_reg(end + 1,:) = bf_reg;                                                                                                         
             
             break;

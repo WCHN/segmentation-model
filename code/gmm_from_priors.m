@@ -1,5 +1,5 @@
 function dat = gmm_from_priors(dat,model,labels,opt)
-[obs,dm_s,mat_s] = get_obs(dat,'do_scl',true,'mskonlynan',opt.seg.mskonlynan);
+[obs,dm_s,mat_s] = get_obs(dat,'do_scl',true,'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
 GaussPrior       = model.GaussPrior(dat.population);
 miss             = get_par('missing_struct',obs);
 

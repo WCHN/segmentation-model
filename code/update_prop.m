@@ -16,13 +16,6 @@ ix_tiny  = get_par('ix_tiny',dat.population,part.lkp,opt);
 if numel(alpha) < numel(prop)
     alpha = padarray(alpha, [0 numel(prop) - numel(alpha)], 'post', 'replicate');
 end
-    
-% if armijo < 1e-6
-%     % Already found optimal solution
-%     dat.armijo.prop = min(armijo*1.25,1);
-%     
-%     return; 
-% end
 
 %--------------------------------------------------------------------------
 % GN loop

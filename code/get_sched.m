@@ -11,7 +11,7 @@ else
     sched.eul = Inf;
 end
 
-sched.a = [def.sched];
+sched.a = def.sched(2:end);
 
 sched.labels = opt.gmm.labels.S;
 %==========================================================================

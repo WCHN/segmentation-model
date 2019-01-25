@@ -13,21 +13,21 @@ function dat = init_bf(dat,opt,scl)
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
-biasreg  = opt.bf.biasreg;
-fwhm     = opt.bf.biasfwhm;
+biasreg = opt.bf.biasreg;
+fwhm    = opt.bf.biasfwhm;
+S0      = numel(dat);
 
-S0 = numel(dat);
+% Loop over all subjects
 for s=1:S0    
     [dm,~,vs,C] = obs_info(dat{s});
     ff          = get_ff(vs);               
     
     if nargin < 3
-        [~,~,~,~,scl1] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan);
+        [~,~,~,~,scl1] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
         scl{s}         = scl1;
     end
     
-    [x0,y0] = ndgrid(1:dm(1),1:dm(2),1);    
-    z0      = 1:dm(3);
+    [~,grd] = get_subsampling_grid(dm,vs,opt.seg.samp);
     
     cl             = cell(C,1);    
     args           = {'C',cl,'B1',cl,'B2',cl,'B3',cl,'T',cl,'ll',cl};
@@ -45,9 +45,9 @@ for s=1:S0
         dat{s}.bf.chan(c).C = prec;
 
         % Basis functions for bias correction
-        dat{s}.bf.chan(c).B3  = spm_dctmtx(dm(3),d3(3),z0);
-        dat{s}.bf.chan(c).B2  = spm_dctmtx(dm(2),d3(2),y0(1,:)');
-        dat{s}.bf.chan(c).B1  = spm_dctmtx(dm(1),d3(1),x0(:,1));
+        dat{s}.bf.chan(c).B3  = spm_dctmtx(dm(3),d3(3),grd.z0);
+        dat{s}.bf.chan(c).B2  = spm_dctmtx(dm(2),d3(2),grd.y0(1,:)');
+        dat{s}.bf.chan(c).B1  = spm_dctmtx(dm(1),d3(1),grd.x0(:,1));
 
         % Initial parameterisation of bias field
         dat{s}.bf.chan(c).T = zeros(d3);
