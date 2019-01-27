@@ -1,9 +1,19 @@
 function [y,eul_its] = make_deformation(v,prm,int_args,Greens,cyc_its)
 % FORMAT [y,eul_its] = make_deformation(v,prm,int_args,Greens,cyc_its)
-% v     - ...
+% v        - Initial velocity field
+% prm      - Differential operator parameters
+% int_args - Number of integration time steps
+% Greens   - Fourier transform of Green's function 
+% cyc_its  - Number of Full Multigrid cycles and number of relaxation 
+%            iterations per cyc
+%
+% y       - Forward deformation
+% eul_its - Number of integration time steps (just for debugging
+%           information)
 %
 % Make a deformation (y) from an initial velocity (v), either by shooting
 % or small displacements.
+%
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
@@ -22,7 +32,7 @@ if int_args <= 1
 else
     if int_args == Inf
         % Pick a suitable number of Euler iterations heuristically
-        eul_its = min(double(floor(sqrt(max(max(max( sum(v.^2, 4) ))))) + 1),12);
+        eul_its = max(double(floor(sqrt(max(max(max( sum(v.^2, 4) ))))) + 1),2);
     else
         eul_its = int_args;
     end
@@ -34,9 +44,8 @@ else
         id        = cat(4,id{:});
         y         = id + v;
     else
-        % Diffeo
-        int_args = [eul_its cyc_its];
-        y        = spm_shoot3d(v,prm,int_args,Greens);
+        % Shoot
+        y = spm_shoot3d(v,prm,[eul_its cyc_its],Greens);
     end
 end
 
