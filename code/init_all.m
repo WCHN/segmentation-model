@@ -25,9 +25,16 @@ dat       = init_mrf(dat,opt);            % Init use of first-order MRF
 % Init template and GMM
 if opt.template.do
     % Init template from histogram representations of input images
-    model       = init_uniform_template(dat,opt); % Create initial uniform template     
+    
+    model = init_uniform_template(dat,opt); % Create initial uniform template     
+    
+    fprintf('Start making initial estimates of GMM parameters...');
     [dat,model] = init_gmm(dat,model,opt);
+    fprintf('done!\n')
+    
+    fprintf('Start making initial estimate of template...');
     [model,dat] = update_template(dat,model,opt,true);
+    fprintf('done!\n')
     
     if opt.verbose.model >= 3, show_segmentations(dat,opt); end
     if opt.verbose.model >= 3, show_PropPrior(dat,model,opt); end

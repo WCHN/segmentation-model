@@ -12,11 +12,11 @@ verbose = opt.verbose.reg;
 part    = dat.gmm.part;
 
 % Parameters
-K      = size(template,2);
-Nr     = numel(r);
-[E,dE] = spm_dexpm(r,B);
-Affine = (mat_a\E*mat_s)*subsamp.MT;
-const  = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
+K       = size(template,2);
+Nr      = numel(r);
+[E,dE]  = spm_dexpm(r,B);
+Affine  = (mat_a\E*mat_s)*subsamp.MT;
+const   = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
 ix_tiny = get_par('ix_tiny',dat.population,part.lkp,opt);
 
 %--------------------------------------------------------------------------

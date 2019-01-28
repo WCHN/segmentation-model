@@ -614,6 +614,9 @@ end
 if ~isfield(opt.do,'mrf')
     opt.do.mrf        = false;
 end
+if opt.do.mrf
+    error('opt.do.mrf = true does not work at the moment, need to implement resizing of Z...')
+end
 
 % opt.ct
 if ~isfield(opt,'ct') 

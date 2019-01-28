@@ -81,34 +81,63 @@ else
         ll = 0;                                            % Template log-likelihood
         
 %         for s=1:S0
-        parfor s=1:S0 
+        parfor s=1:S0             
             
+            if is_init
+                samp = 0;
+            else
+                samp = opt.seg.samp;
+            end
+
             % Subject parameters
-            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp);                
+            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan,'samp',samp);                            
+            labels                                           = get_labels(dat{s},opt,samp,subsmp,grd);
+            miss                                             = get_par('missing_struct',obs);
+            grd                                              = [];            
             
-            labels   = get_labels(dat{s},opt);
-            miss     = get_par('missing_struct',obs);
+            % Misc parameters            
             ff       = get_ff(vs_s);     
             prop     = dat{s}.gmm.prop;
             prm_v    = [subsmp.sk.*vs_s ff*prm_reg*prod(subsmp.sk.*vs_s)];
-            if isnumeric(dat{s}.reg.v)
-                % Initial velocity stored in array
-                v    = dat{s}.reg.v;              
-            else
-                % Initial velocity read from NIfTI
-                v    = single(dat{s}.reg.v.dat(:,:,:,:));       
-            end            
             modality = dat{s}.modality{1}.name; 
             
+            % Get initial velocity field
+            if is_init
+                v = zeros([dm_s 3],'single');
+            else
+                if isnumeric(dat{s}.reg.v)
+                    % Initial velocity stored in array
+                    v = dat{s}.reg.v;              
+                else
+                    % Initial velocity read from NIfTI
+                    v = single(dat{s}.reg.v.dat(:,:,:,:));       
+                end 
+            end            
+            
+            % Get bias field
             do_bf  = opt.bf.do && strcmpi(modality,'MRI');
             if do_bf || strcmpi(modality,'MRI') 
-                bf = get_bf(dat{s}.bf.chan,dm_s);
+                if is_init
+                    [x1,y1] = ndgrid(1:dm_s(1),1:dm_s(2),1);
+                    z1      = 1:dm_s(3);
+                    dat_tmp = dat{s};
+                    for c=1:numel(dat_tmp.bf.chan)
+                        d3                    = [size(dat_tmp.bf.chan(c).T) 1];
+                        dat_tmp.bf.chan(c).B3 = spm_dctmtx(dm_s(3),d3(3),z1);
+                        dat_tmp.bf.chan(c).B2 = spm_dctmtx(dm_s(2),d3(2),y1(1,:)');
+                        dat_tmp.bf.chan(c).B1 = spm_dctmtx(dm_s(1),d3(1),x1(:,1));
+                    end        
+                    bf      = get_bf(dat_tmp.bf.chan,dm_s);
+                    dat_tmp = []; x1 = []; y1 = []; z1 = [];                    
+                else
+                    bf = get_bf(dat{s}.bf.chan,dm_s);
+                end
             else     
                 bf = 1;
             end                        
 
             % Build and apply FFT of Green's function to map from momentum
-            % to velocity (if opt.reg.int_args > 1)                       
+            % to velocity
             if int_args > 1, Greens = spm_shoot_greens('kernel',dm_s(1:3),prm_v);
             else             Greens = [];
             end
@@ -121,7 +150,7 @@ else
             
             % Compute affine transformation matrix
             E      = spm_dexpm(dat{s}.reg.r,B); % Compute matrix exponential
-            Affine = (mat_a\E*mat_s)*subsmp.MT;   
+            Affine = (mat_a\E*mat_s);   
 
             % Warp template to subject and softmax       
             [Template,y] = warp_template(model,y,Affine);              
@@ -130,6 +159,8 @@ else
             Z        = get_resp(obs,bf,dat{s},Template,labels,scl,miss,dm_s,opt);   
             labels   = []; 
             Template = []; 
+            bf       = [];
+            miss     = [];
             % figure; imshow3D(squeeze(reshape(Z,[dm_s K])))                                          
 
             if opt.verbose.model >= 3

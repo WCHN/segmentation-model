@@ -102,6 +102,7 @@ if do_bf || strcmpi(modality,'MRI')
             dat.bf.chan(c).B2 = spm_dctmtx(dm_s(2),d3(2),y1(1,:)');
             dat.bf.chan(c).B1 = spm_dctmtx(dm_s(1),d3(1),x1(:,1));
         end
+        clear x1 y1 z1
     end
     
     bf = get_bf(dat.bf.chan,dm_s);

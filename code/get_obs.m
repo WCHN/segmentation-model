@@ -1,4 +1,4 @@
-function [obs,dm,mat,vs,scl,V,C,mn,mx,nam,subsmp] = get_obs(varargin)
+function [obs,dm,mat,vs,scl,V,C,mn,mx,nam,subsmp,grd] = get_obs(varargin)
 % FORMAT [obs,dm,mat,vs,scl,V,C,mn,mx,nam] = get_obs(dat, 'do_scl', ..., 'mask', ..., 'val', ...)
 % dat    - Subject's data structure (one subject)
 % do_scl - Apply a scaling factor to roughly align histograms

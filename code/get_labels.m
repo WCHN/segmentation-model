@@ -1,7 +1,9 @@
-function [labels,mn,mx] = get_labels(dat,opt)
+function [labels,mn,mx] = get_labels(dat,opt,samp,subsmp,grd)
 % FORMAT [labels,mn,mx] = get_labels(dat,opt)
 % dat    - Subject's data structure (one subject)
 % opt    - Options structure
+% grd    - Subsampling info struct
+% grd    - Subsampling grid struct
 % labels - {1} Image of labels (in uint8)
 %          {2} Confusion matrix
 % mn     - Minimum label value
@@ -10,6 +12,11 @@ function [labels,mn,mx] = get_labels(dat,opt)
 % Load image of labels from disk + post-process + get confusion matrix
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
+if nargin < 3, samp   = 0;  end
+if nargin < 4, subsmp = []; end
+if nargin < 5, grd    = []; end
+
 mn     = 0;
 mx     = 0;
 labels = {}; 
@@ -23,7 +30,20 @@ if isfield(dat,'label') && opt.gmm.labels.use
     
     ix_bg  = max(ix) + 1;
     dm     = dat.label{1}.nii.dat.dim;
-    labels = uint8(dat.label{1}.nii.dat(:));
+    V      = spm_vol(dat.label{1}.nii.dat.fname);
+    
+    % We may need to sub-sample the labels
+    if samp > 0
+        dm     = subsmp.dm;
+        dm     = [dm 1];
+        labels = zeros(dm(1:3),'uint8');
+        for z=1:numel(grd.z0)
+            labels(:,:,z) = spm_sample_vol(V,grd.x0,grd.y0,grd.z0(z)*grd.o,0);
+        end
+        labels = labels(:);
+    else
+       labels = uint8(dat.label{1}.nii.dat(:)); 
+    end            
 %     figure(666); imshow3D(reshape(labels,dm))
     
     msk          = ismember(labels,ix(ix>0));

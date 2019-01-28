@@ -116,9 +116,9 @@ parfor s=1:S0
         end        
     end
             
-    labels = get_labels(dat{s},opt);
+%     labels = get_labels(dat{s},opt);
     
-    [V,W] = spm_imbasics('hist',obs_s,bins,'KeepZero',false,'Missing',true,'Labels',labels);
+    [V,W] = spm_imbasics('hist',obs_s,bins,'KeepZero',false,'Missing',true);
         
     obs{s} = {single(V),single(W)};
 end

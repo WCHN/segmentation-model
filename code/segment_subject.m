@@ -1,24 +1,23 @@
 function [dat,res] = segment_subject(dat,model,opt)
 
-set_globals;
-
 %--------------------------------------------------------------------------
 % Initialise model parameters
 %--------------------------------------------------------------------------
 
-% Get labels
-labels = get_labels(dat,opt); 
-K      = opt.template.K;
+set_globals;
 
 % Population parameters
-mat_a      = model.template.nii.mat;       % Template orientation matrix                  
-dm_a       = model.template.nii.dat.dim;   % Template orientation matrix   
-PropPrior  = model.PropPrior;              % Proportion prior parameter
-GaussPrior = model.GaussPrior(dat.population); 
-it_mod     = opt.model.it;
+K          = opt.template.K;                   % Number of tissue classes
+mat_a      = model.template.nii.mat;           % Template orientation matrix                  
+dm_a       = model.template.nii.dat.dim;       % Template orientation matrix   
+PropPrior  = model.PropPrior;                  % Proportion prior parameter
+GaussPrior = model.GaussPrior(dat.population); % Intensity prior parameters
+it_mod     = opt.model.it;                     % Model iteration
 
 % Subject parameters
-[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp);
+[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp);
+labels                                           = get_labels(dat,opt,opt.seg.samp,subsmp,grd); % Get labels
+clear grd
 
 modality = dat.modality{1}.name;             % Imaging modality
 I        = size(obs,1);                      % Total number of voxels
@@ -409,9 +408,60 @@ if opt.template.do && opt.template.load_a_der
     % update_template)
     %----------------------------------------------------------------------
 
-    % Get responsibilities
+    if opt.seg.samp > 0
+        % Compute responsibilities on original image size, not the
+        % sub-sampled version
+        clear obs bf Template miss labels
+        
+        % Get original image(s) and dimensions        
+        [obs,dm_s] = get_obs(dat,'samp',0); 
+        
+        % Resize bias field
+        [x1,y1] = ndgrid(1:dm_s(1),1:dm_s(2),1);
+        z1      = 1:dm_s(3);
+        dat_tmp = dat;
+        for c=1:numel(dat_tmp.bf.chan)
+            d3                    = [size(dat_tmp.bf.chan(c).T) 1];
+            dat_tmp.bf.chan(c).B3 = spm_dctmtx(dm_s(3),d3(3),z1);
+            dat_tmp.bf.chan(c).B2 = spm_dctmtx(dm_s(2),d3(2),y1(1,:)');
+            dat_tmp.bf.chan(c).B1 = spm_dctmtx(dm_s(1),d3(1),x1(:,1));
+        end        
+        clear x1 y1 z1
+        bf = get_bf(dat_tmp.bf.chan,dm_s);
+        clear dat_tmp
+        
+        % Resize deformation
+        y = resize_def(y,dm_s,subsmp);
+        
+        % Warp template
+        E        = spm_dexpm(dat.reg.r,opt.reg.B); 
+        Affine   = model.template.nii.mat\E*mat_s;               
+        Template = warp_template(model,y,Affine);
+        
+        % Missing data struct
+        miss = get_par('missing_struct',obs);
+        
+        % Labels
+        labels = get_labels(dat,opt);
+    end   
+    
+    % Get responsibilities    
     Z = get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt);   
-    clear Template
+    
+    % Some verbose
+    if opt.verbose.gmm >= 3
+        % Show observed data, warped template and current responsibilities
+        show_seg(obs,Template,dat.gmm.prop,Z,dm_s,modality,chn_names,opt.model.nam_cls);
+    end
+    if opt.verbose.reg >= 3 
+         % Show initial velocities
+        show_bf_and_ivel(obs,dm_s,y);
+    end
+    if opt.verbose.bf >= 3
+        % Show bias field
+        show_bf_and_ivel(obs,dm_s,bf);
+    end
+    clear Template bf labels
 
     % Push responsibilities from subject space to template space
     y = spm_warps('transform',Affine,y);
@@ -419,10 +469,11 @@ if opt.template.do && opt.template.load_a_der
         y(:,:,:,3) = 1;
     end
     
+    % Push responsibilities from subject space into template space
     Z = push_responsibilities(Z,y,dm_a(1:3));                      
     clear y
     
-    % Compute template gradients and Hessian
+    % Compute template gradients and Hessian (in template space)
     a               = rotate_template(model.template.nii,opt);
     [gr,H,dll]      = diff_template(a,Z,dat.gmm.prop,opt);         
     dat.template.ll = dll;                        
