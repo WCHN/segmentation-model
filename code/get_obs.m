@@ -43,7 +43,7 @@ samp       = p.Results.samp;
 
 % Sub-sampling    
 [subsmp,grd] = get_subsampling_grid(dm,vs,samp);
-dm         = subsmp.dm;
+dm           = subsmp.dm;
 
 % Total number of voxels
 I = prod(dm); 

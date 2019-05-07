@@ -28,7 +28,7 @@ if isfield(dat,'label') && opt.gmm.labels.use
         ix = opt.gmm.labels.cm(dat.population);
     end        
     
-    ix_bg  = max(ix) + 1;
+    ix_bg  = numel(ix);
     dm     = dat.label{1}.nii.dat.dim;
     V      = spm_vol(dat.label{1}.nii.dat.fname);
     
@@ -46,7 +46,14 @@ if isfield(dat,'label') && opt.gmm.labels.use
     end            
 %     figure(666); imshow3D(reshape(labels,dm))
     
-    msk          = ismember(labels,ix(ix>0));
+    unq = [];
+    for l=1:numel(ix) - 1
+        if ~isempty(ix{l})
+            unq = [unq l];
+        end
+    end
+    
+    msk          = ismember(labels,unq);
     labels(~msk) = ix_bg;
 %     figure(666); imshow3D(reshape(msk,dm))
     

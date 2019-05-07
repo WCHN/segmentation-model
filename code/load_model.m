@@ -45,10 +45,14 @@ for s=1:S0
     % Set PropPrior
     %--------------------------------------------------------------------------
 
-    if isfield(opt.gmm,'pth_PropPrior') && exist(opt.gmm.pth_PropPrior,'file')        
+    if isfield(opt.gmm,'pth_PropPrior') && exist(opt.gmm.pth_PropPrior,'file')   
+        fprintf('2 | Proportion prior for %s found...loaded.\n',dat{s}.population);
+        
         load(opt.gmm.pth_PropPrior,'PropPrior');
         model{s}.PropPrior = PropPrior;    
     else
+        fprintf('2 | Proportion prior for %s not found...using uninformative.\n',dat{s}.population);
+        
         alpha = ones(1,K)*opt.prop.reg;
 
         model{s}.PropPrior.alpha = alpha;
@@ -117,13 +121,13 @@ for s=1:S0
 
             no_GaussPrior = false(1,C);
 
-            fprintf('2 | Intensity prior for %s found...loaded.\n',dat{s}.population);
+            fprintf('3 | Intensity prior for %s found...loaded.\n',dat{s}.population);
         else
             % Population does not exist in prior dictionary, check if channel
             % exists in other population
             %----------------------------------------------------------------------
 
-            fprintf('2 | Intensity prior for %s not found.\n',dat{s}.population);
+            fprintf('3 | Intensity prior for %s not found.\n',dat{s}.population);
 
             pr    = cell(1,7);
             pr{1} = zeros(C,K);

@@ -466,11 +466,11 @@ slice.obs = double(obs(ix,:));
 
 % Bias field
 if numel(bf) == 1
-    slice.bf = ones(size(slice.obs));
+    slice.bf = bsxfun(@times,BinWidth,ones(size(slice.obs)));
 else
-    slice.bf                   = double(bf(ix,:));
-    slice.bf(isnan(slice.obs)) = 1;
+    slice.bf = double(bf(ix,:));    
 end        
+slice.bf(isnan(slice.obs)) = 1;
 
 % Template
 if isempty(template)

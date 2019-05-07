@@ -13,89 +13,94 @@ dir_model   = opt.dir_model;                    % Directory were model file sare
 verbose     = opt.gmm.hist.verbose;             % Verbosity
 constrained = opt.gmm.GaussPrior.constrained;   % Constrain variances to be similar
 GaussPrior  = model.GaussPrior;                 % Prior parameters dictionary {mean df scale df}
+ModSharing  = opt.gmm.GaussPrior.mods;
 
-S0          = numel(dat);                       % Number of subjects
+S0          = numel(dat);                              % Number of subjects
 populations = spm_json_manager('get_populations',dat); % list of populations
-P           = numel(populations);               % Number of populations
+P           = numel(populations);                      % Number of populations
 
-%--------------------------------------------------------------------------
-% First we update for CT data, where all populations share the same GaussPrior
-%--------------------------------------------------------------------------
+if ~isempty(ModSharing)
+    %----------------------------------------------------------------------
+    % First we update populations which share the prior
+    %----------------------------------------------------------------------
 
-clusters = {};      % List of CT Gaussian parameters
-cnt      = 1;       % Number of CT scans
-has_ct   = false;   % Is there at least one CT population?
-
-for p=1:P % Iterate over populations
-    population0 = populations{p}.name;
-    modality    = populations{p}.type;
+    for m0=1:numel(ModSharing)
         
-    if ~strcmpi(modality,'ct')
-        % Skip non-CT data
-        continue
-    end
-    
-    has_ct = true;
-    
-    pr = GaussPrior(population0); % Previous CT priors
-    
-    % Get lkp
-    for s=1:S0
-        population = dat{s}.population;
+        NameMod = ModSharing{m0};
+        
+        clusters = {};    
+        cnt      = 1;     
+        has_mod  = false; 
 
-        if strcmp(population0,population)
-            lkp = dat{s}.gmm.part.lkp; % Map GMM cluster to Template classes
-            break
+        for p=1:P % Iterate over populations
+            population0 = populations{p}.name;
+            modality    = get_modality_name(dat,population0);
+
+            if ~strcmpi(modality,NameMod)
+                continue
+            end
+
+            has_mod = true;
+
+            pr = GaussPrior(population0);
+
+            % Get lkp
+            for s=1:S0
+                population = dat{s}.population;
+
+                if strcmp(population0,population)
+                    lkp = dat{s}.gmm.part.lkp; % Map GMM cluster to Template classes
+                    break
+                end
+            end
+
+            for s=1:S0 % Iterate over subjects      
+                population = dat{s}.population; 
+
+                if strcmpi(population0,population)
+                    clusters{cnt} = dat{s}.gmm.cluster;
+                    cnt           = cnt + 1;
+               end
+            end
         end
-    end
 
-    for s=1:S0 % Iterate over subjects      
-        population = dat{s}.population; 
+        if has_mod
+            [pr(1:4),extras] = spm_gmm_lib('UpdateHyperPars',clusters,pr(1:4), ...
+                                           'constrained',constrained,...
+                                           'figname',modality,...
+                                           'verbose',verbose,...
+                                           'lkp',lkp);    
 
-        if strcmpi(population0,population)
-            clusters{cnt} = dat{s}.gmm.cluster;
-            cnt           = cnt + 1;
-       end
+
+            lb_pr                  = pr{6};                                        
+            lb_pr.KL_qVpV(end + 1) = extras.lb;  % KL(q(V0) || p(V0))
+            lb_pr.ElnDetV          = extras.ldW; % E[ln|V0|]    
+            pr{6}                  = lb_pr;    
+
+            for p=1:P % Iterate over populations
+                population0 = populations{p}.name;
+                modality    = get_modality_name(dat,population0);
+
+                if ~strcmpi(modality,NameMod)
+                    continue
+                end
+
+                GaussPrior(population0) = pr; % Update population prior
+            end
+        end
     end
 end
 
-if has_ct
-    [pr(1:4),extras] = spm_gmm_lib('UpdateHyperPars',clusters,pr(1:4), ...
-                                   'constrained',constrained,...
-                                   'figname','CT',...
-                                   'verbose',verbose,...
-                                   'lkp',lkp);    
-
-
-    lb_pr                  = pr{6};                                        
-    lb_pr.KL_qVpV(end + 1) = extras.lb;  % KL(q(V0) || p(V0))
-    lb_pr.ElnDetV          = extras.ldW; % E[ln|V0|]    
-    pr{6}                  = lb_pr;    
-
-    for p=1:P % Iterate over populations
-        population0 = populations{p}.name;
-        modality    = populations{p}.type;
-
-        if ~strcmpi(modality,'ct')
-            % Skip non-CT data
-            continue
-        end
-
-        GaussPrior(population0) = pr; % Update population prior
-    end
-end
-
 %--------------------------------------------------------------------------
-% Then we update for MR data, where all populations have their individual
-% GaussPriors
+% Then we update individual GaussPriors
 %--------------------------------------------------------------------------
 
 for p=1:P % Iterate over populations
     population0 = populations{p}.name;
-    modality    = populations{p}.type;
+    modality    = get_modality_name(dat,population0);
         
-    if strcmpi(modality,'ct')
-        % Skip CT data
+    if any(strcmp(ModSharing,modality)) && ~isempty(modality) 
+        % Skip this modality
         continue
     end
     

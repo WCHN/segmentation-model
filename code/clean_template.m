@@ -1,10 +1,16 @@
-function Z = clean_brain(Z,model,opt,y,Verbose)
-% Clean-up resulting (soft) segmentations using a series of educated
-% heuristics.
+function model = clean_template(model,opt,Verbose)
+% FORMAT model = clean_template(model,opt)
+% model   - Model structure
+% opt     - Options structure
+% Verbose - Show masking results
+%
+% Ad-hoc template clean-up routine, to remove non-brain voxels from classes
+% that should only contain brain and non-air voxels from classes that
+% should only contain air.
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
-if nargin < 5, Verbose = false; end
+if nargin < 3, Verbose = false; end
 
 % Parameters
 BrainClass  = opt.template.clean.brain;
@@ -20,16 +26,9 @@ dil_er      = opt.template.clean.dil_er;
 it_dil_er   = opt.template.clean.it_dil_er;
 SmoothSig   = 1;
 
+% Get soft-maxed template
 template = single(model.template.nii.dat(:,:,:,:));
 template = spm_matcomp('softmax',template);  
-
-% Build a 3x3x3 seperable smoothing kernel (krn)
-krn.x=[0.75 1 0.75];
-krn.y=[0.75 1 0.75];
-krn.z=[0.75 1 0.75];
-sm=sum(kron(kron(krn.z,krn.y),krn.x))^(1/3);
-krn.x=krn.x/sm; krn.y=krn.y/sm; krn.z=krn.z/sm;
-clear sm
 
 if ~isempty(BrainClass)
     %----------------------------------------------------------------------
@@ -87,23 +86,27 @@ if ~isempty(BrainClass)
         % Some verbose
         subplot(nr,nc,fig_cnt); fig_cnt = fig_cnt + 1;    
     end
-  
     
     if dil_er
-        % Close holes
-        msk = binmorph('close',msk,it_dil_er);
+        % Dilate/erode
+        se  = strel('sphere',1);
+        for i=1:it_dil_er
+            msk = imdilate(msk, se);    
 
-        if Verbose
-            % Some verbose        
-            imagesc3d(msk); axis off; drawnow
-        end  
-        
-        msk = imfill(msk,'holes');
-        
-        if Verbose
-            % Some verbose        
-            imagesc3d(msk); axis off; drawnow
-        end  
+            if Verbose
+                % Some verbose        
+                imagesc3d(msk); axis off; drawnow
+            end
+        end        
+
+        for i=1:it_dil_er
+            msk = imerode(msk, se);
+
+            if Verbose
+                % Some verbose        
+                imagesc3d(msk); axis off; drawnow
+            end
+        end       
     end
     
     if Verbose
@@ -116,73 +119,18 @@ if ~isempty(BrainClass)
             imagesc3d(img); axis off; drawnow
         end
     end
-    
+
+    % Update template with mask information
+    template = adjust_template_brain(template,msk,BrainClass,LesionClass,Tiny,SmoothSig);
+
     if Verbose
-        % Show template before clean
+        % Some verbose
         figure(FigNum + 1)
         nr = floor(sqrt(K));
         nc = ceil(K/nr);      
         for k=1:K   
             subplot(nr,nc,k)
             imagesc3d(template(:,:,:,k)); axis off; drawnow
-        end
-    end
-    
-    % Update template with mask information
-    template = adjust_Z_brain(template,msk,BrainClass,LesionClass,Tiny,SmoothSig);
-    
-    if Verbose
-        % Show template after clean
-        figure(FigNum + 2)
-        nr = floor(sqrt(K));
-        nc = ceil(K/nr);      
-        for k=1:K   
-            subplot(nr,nc,k)
-            imagesc3d(template(:,:,:,k)); axis off; drawnow
-        end
-    end        
-
-    if Verbose
-        % Show Z before clean
-        figure(FigNum + 3)
-        nr = floor(sqrt(K));
-        nc = ceil(K/nr);      
-        for k=1:K   
-            subplot(nr,nc,k)
-            imagesc3d(Z(:,:,:,k)); axis off; drawnow
-        end
-    end
-    
-    % Warp mask to subject space
-    msk                 = single(msk);
-    msk                 = imgaussfilt3(msk,SmoothSig);
-    msk                 = spm_diffeo('bsplins',msk,y,[4 4 4  0 0 0]);
-    msk(~isfinite(msk)) = 0;    
-    msk                 = msk > 0;
-    
-    % Fill holes
-    msk = imfill(msk,'holes');
-    
-    % Erode
-    msk = binmorph('erode',msk,it_dil_er);
-    
-    if Verbose
-        % Some warped mask    
-        figure(FigNum + 4)
-        imagesc3d(msk); axis off; drawnow
-    end          
-    
-    % Update Z with mask information    
-    Z = adjust_Z_brain(Z,msk,BrainClass,LesionClass,Tiny,SmoothSig);
-
-    if Verbose
-        % Show Z after clean
-        figure(FigNum + 5)
-        nr = floor(sqrt(K));
-        nc = ceil(K/nr);      
-        for k=1:K   
-            subplot(nr,nc,k)
-            imagesc3d(Z(:,:,:,k)); axis off; drawnow
         end
     end
 end
@@ -249,12 +197,8 @@ if ~isempty(AirClass)
         imagesc3d(msk); axis off; drawnow
     end
 
-    % Warp mask to subject space
-    msk                 = spm_diffeo('bsplins',single(msk),y,[0 0 0  0 0 0]);
-    msk(~isfinite(msk)) = 0;
-
-    % Update template and Z with mask information    
-    Z = adjust_Z_air(Z,msk,BrainClass,LesionClass,Tiny,SmoothSig);
+    % Update template with mask information
+    template = adjust_template_air(template,msk,AirClass,Tiny,SmoothSig);
 
     if Verbose
         % Some verbose
@@ -267,10 +211,15 @@ if ~isempty(AirClass)
         end
     end
 end
+
+if nargout > 0 && (~isempty(BrainClass) || ~isempty(AirClass))
+    % Take log and write to template NIfTI
+    model.template.nii.dat(:,:,:,:) = log(template);
+end
 %==========================================================================
 
 %==========================================================================
-function template = adjust_Z_brain(template,msk,BrainClasses,LesionClass,Tiny,SmoothSig)
+function template = adjust_template_brain(template,msk,BrainClasses,LesionClass,Tiny,SmoothSig)
 dm       = size(template);
 K        = dm(4);
 msk      = reshape(msk,[prod(dm(1:3)) 1]);
@@ -278,6 +227,13 @@ template = reshape(template,[prod(dm(1:3)) K]);
 for k=1:K    
     if ismember(k,BrainClasses) || ismember(k,LesionClass)
         template(~msk,k) = Tiny;
+        
+        if SmoothSig > 0
+            % Smooth mask a little bit
+            template          = reshape(template,[dm(1:3) K]);
+            template(:,:,:,k) = imgaussfilt3(template(:,:,:,k),SmoothSig);
+            template          = reshape(template,[prod(dm(1:3)) K]);
+        end
     end    
 end
 
@@ -287,7 +243,7 @@ template = bsxfun(@rdivide,template,sum(template,4) + eps);
 %==========================================================================
 
 %==========================================================================
-function template = adjust_Z_air(template,msk,AirClass,Tiny,SmoothSig)
+function template = adjust_template_air(template,msk,AirClass,Tiny,SmoothSig)
 dm       = size(template);
 K        = dm(4);
 msk      = reshape(msk,[prod(dm(1:3)) 1]);
@@ -295,6 +251,13 @@ template = reshape(template,[prod(dm(1:3)) K]);
 for k=1:K    
     if ismember(k,AirClass)
         template(msk,k) = 1 - Tiny;
+
+        if SmoothSig > 0
+            % Smooth mask a little bit
+            template          = reshape(template,[dm(1:3) K]);
+            template(:,:,:,k) = imgaussfilt3(template(:,:,:,k),SmoothSig);
+            template          = reshape(template,[prod(dm(1:3)) K]);
+        end
     end    
 end
 
@@ -332,66 +295,4 @@ end
 val = sum(vals);
 
 return
-%==========================================================================
-
-%==========================================================================
-function vol = binmorph(action,bim,n)
-
-if nargin < 3, n = 1; end % Iterations
-    
-vol = uint8(bim);
-
-kx = [1 1 1];
-ky = [1 1 1];
-kz = [1 1 1];
-
-order = sum(kx(:) ~= 0)*sum(ky(:) ~= 0);
-
-switch lower(action)
-    
-	case 'dilate'
-	
-        sz = size(vol);
-        vol2 = zeros(sz(1)+(2*n),sz(2)+(2*n),sz(3)+(2*n),'uint8');
-        vol2(n+1:sz(1)+n,n+1:sz(2)+n,n+1:sz(3)+n) = vol;
-        for i = 1:n
-            spm_conv_vol(vol2,vol2,kx,ky,kz,-[1 1 1]);
-            vol2 = uint8(vol2~=0);
-            
-%             imagesc3d(vol2); axis off; drawnow
-        end
-        vol = vol2(n+1:sz(1)+n,n+1:sz(2)+n,n+1:sz(3)+n);
-
-	case 'erode'
-
-        for i = 1:n
-            spm_conv_vol(vol,vol,kx,ky,kz,-[1 1 1]);
-            vol = uint8(vol>=order);
-            
-%             imagesc3d(vol); axis off; drawnow
-        end
-        
-	case 'close'
-        
-        sz = size(vol);
-        vol2 = zeros(sz(1)+(2*n),sz(2)+(2*n),sz(3)+(2*n),'uint8');
-        vol2(n+1:sz(1)+n,n+1:sz(2)+n,n+1:sz(3)+n) = vol;
-        for i = 1:n
-            spm_conv_vol(vol2,vol2,kx,ky,kz,-[1 1 1]);
-            vol2 = uint8(vol2~=0);
-            
-%             imagesc3d(vol2); axis off; drawnow
-        end                
-        
-        for i = 1:n
-            spm_conv_vol(vol2,vol2,kx,ky,kz,-[1 1 1]);
-            vol2 = uint8(vol2>=order);
-            
-%             imagesc3d(vol2); axis off; drawnow
-        end
-        vol = vol2(n+1:sz(1)+n,n+1:sz(2)+n,n+1:sz(3)+n);
-        clear vol2                        
-end
-
-vol = logical(vol);
 %==========================================================================

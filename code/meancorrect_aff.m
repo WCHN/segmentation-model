@@ -17,6 +17,14 @@ if opt.reg.mc_aff
     r_avg = mean(r,2);
     clear r
 
+    % Some verbose
+    fprintf('r_avg = [');
+    for i=1:numel(r_avg) - 1
+        fprintf('%4.2f ',r_avg(i));
+    end
+    fprintf('%4.2f',r_avg(end))
+    fprintf(']\n');
+                
     for s=1:S0
         dat{s}.reg.r = dat{s}.reg.r - r_avg;
     end            

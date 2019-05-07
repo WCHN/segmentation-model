@@ -1,4 +1,4 @@
-function [dat,res] = segment_subject(dat,model,opt)
+function dat = segment_subject(dat,model,opt)
 
 %--------------------------------------------------------------------------
 % Initialise model parameters
@@ -28,7 +28,7 @@ miss = get_par('missing_struct',obs);
 
 % Bias field
 do_bf = opt.bf.do && strcmpi(modality,'MRI'); % Update bias-field?
-if do_bf || strcmpi(modality,'MRI')
+if do_bf
     % Compute bias-field
     bf = get_bf(dat.bf.chan,dm_s);             
 else  
@@ -51,7 +51,7 @@ else,                    v = single(dat.reg.v.dat(:,:,:,:));
 end
 
 % FFT of Green's function
-prm_v                           = [subsmp.sk.*vs_s ff*opt.reg.rparam*prod(subsmp.sk.*vs_s)];
+prm_v                           = [subsmp.sk.*vs_s ff*opt.reg.rparam];
 if opt.reg.int_args > 1, Greens = spm_shoot_greens('kernel',dm_s(1:3),prm_v);
 else,                    Greens = [];
 end
@@ -78,17 +78,18 @@ end
 % Initial alignment of template
 %--------------------------------------------------------------------------
 
-if ~opt.template.do && dm_s(3) > 1
-    % Align template by mutual information registration
-    
-    dat = maffreg_template2subject(dat,model,opt);
-    
-    E      = spm_dexpm(dat.reg.r,opt.reg.B);
-    Affine = (model.template.nii.mat\E*mat_s)*subsmp.MT;
-
-    % Warp template to subject      
-    Template = warp_template(model,y,Affine);
-elseif it_mod == 1 && opt.reg.do_aff        
+% if ~opt.template.do && dm_s(3) > 1
+%     % Align template by mutual information registration
+%     
+%     dat = maffreg_template2subject(dat,model,opt);
+%     
+%     E      = spm_dexpm(dat.reg.r,opt.reg.B);
+%     Affine = (model.template.nii.mat\E*mat_s)*subsmp.MT;
+% 
+%     % Warp template to subject      
+%     Template = warp_template(model,y,Affine);
+% elseif it_mod == 1 && opt.reg.do_aff        
+if it_mod == 1 && opt.reg.do_aff            
     % Align the template by updating the affine parameters until convergence    
 
     % Affine matrix    
@@ -183,8 +184,15 @@ end
 
 if opt.verbose.gmm, tic; end % Start timer
 
+if opt.template.do
+    % Only do one within subject iteration
+    nit_main = 1;
+else
+    nit_main = opt.seg.niter;
+end
+
 gain = 0;
-for it_seg=1:opt.seg.niter     
+for it_seg=1:nit_main   
     
     do_prop = opt.prop.do   && (it_mod >= opt.start_it.do_prop || it_seg >= opt.start_it.do_prop);    
     do_mg   = opt.do.mg     && (it_mod >= opt.start_it.do_mg   || it_seg >= opt.start_it.do_mg);
@@ -199,7 +207,8 @@ for it_seg=1:opt.seg.niter
     % UPDATE BIAS FIELD
     %----------------------------------------------------------------------
             
-    updt_mg = do_mg & it_mod >= opt.start_it.upd_mg;
+    updt_mg = do_mg & ...
+              (it_mod >= opt.start_it.upd_mg || it_seg >= opt.start_it.upd_mg);
     
     for it_bf=1:opt.bf.niter       
         
@@ -231,7 +240,7 @@ for it_seg=1:opt.seg.niter
         if opt.template.do
             prop_niter = opt.prop.niter(min(numel(opt.prop.niter),it_mod));
         else
-            prop_niter = opt.prop.niter(min(numel(opt.prop.niter),iter));            
+            prop_niter = opt.prop.niter(min(numel(opt.prop.niter),it_seg));            
         end
 
         for it_prop=1:prop_niter 
@@ -344,54 +353,8 @@ end
 clear Greens
 
 if opt.verbose.model >= 3
-    % Write 2D versions to disk (for verbose) of..
-    ix_z = floor(dm_s(3)/2) + 1;
-
-    % ..responsibilities
-    Z             = get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt,'z',ix_z);   
-    dat.pth.seg2d = fullfile(opt.dir_seg2d,['seg2d_' nam '.nii']);
-    spm_misc('create_nii',dat.pth.seg2d,Z,mat_s,[spm_type('float32') spm_platform('bigend')],'seg2d');        
-    clear Z
-
-    % ..of image (only one channel)
-    [~,~,~,~,~,~,~,chn_names] = obs_info(dat); 
-    for i=1:numel(chn_names)
-       if strcmpi(chn_names{i},'T1')
-           break
-       end
-    end
-
-    im           = reshape(obs(:,i),dm_s(1:3));
-    im           = im(:,:,ix_z);
-    dat.pth.im2d = fullfile(opt.dir_seg2d,['im2d_' nam '.nii']);
-    spm_misc('create_nii',dat.pth.im2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'im2d');        
-
-    if numel(bf) > 1
-        bfz  = reshape(bf(:,i),dm_s(1:3));
-        bfz  = bfz(:,:,ix_z);
-        im   = bfz.*im;
-    end
-    
-    dat.pth.bfim2d = fullfile(opt.dir_seg2d,['bfim2d_' nam '.nii']);
-    spm_misc('create_nii',dat.pth.bfim2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'bfim2d');    
-
-    clear im
-    
-    % ..of initial velocities
-    v2d = zeros([dm_s(1:2) 1 3],'single');
-    for i=1:3        
-        v2d(:,:,1,i) = v(:,:,ix_z,i);
-    end    
-    
-    dat.pth.v2d = fullfile(opt.dir_seg2d,['v2d_' nam '.nii']);
-    spm_misc('create_nii',dat.pth.v2d,v2d,mat_s,[spm_type('float32') spm_platform('bigend')],'v2d');        
-    clear v2d
-    
-    % ..of warped, scaled template    
-    template2d     = reshape(spm_matcomp('softmax',Template(ix_slice(ix_z,prod(dm_s(1:2))),:),dat.gmm.prop),[dm_s(1:2) 1 K]);
-    dat.pth.temp2d = fullfile(opt.dir_seg2d,['temp2d_' nam '.nii']);
-    spm_misc('create_nii',dat.pth.temp2d,template2d,mat_a,[spm_type('float32') spm_platform('bigend')],'temp2d');        
-    clear template2d
+    % Write some results to disk (for visualisation in SegModel.m)
+    dat = write_for_visualisation(dm_s,obs,bf,dat,Template,v,labels,scl,miss,nam,prm_v,opt);
 end
 
 if do_nl
@@ -416,19 +379,23 @@ if opt.template.do && opt.template.load_a_der
         % Get original image(s) and dimensions        
         [obs,dm_s] = get_obs(dat,'samp',0); 
         
-        % Resize bias field
-        [x1,y1] = ndgrid(1:dm_s(1),1:dm_s(2),1);
-        z1      = 1:dm_s(3);
-        dat_tmp = dat;
-        for c=1:numel(dat_tmp.bf.chan)
-            d3                    = [size(dat_tmp.bf.chan(c).T) 1];
-            dat_tmp.bf.chan(c).B3 = spm_dctmtx(dm_s(3),d3(3),z1);
-            dat_tmp.bf.chan(c).B2 = spm_dctmtx(dm_s(2),d3(2),y1(1,:)');
-            dat_tmp.bf.chan(c).B1 = spm_dctmtx(dm_s(1),d3(1),x1(:,1));
-        end        
-        clear x1 y1 z1
-        bf = get_bf(dat_tmp.bf.chan,dm_s);
-        clear dat_tmp
+        if do_bf
+            % Resize bias field
+            [x1,y1] = ndgrid(1:dm_s(1),1:dm_s(2),1);
+            z1      = 1:dm_s(3);
+            dat_tmp = dat;
+            for c=1:numel(dat_tmp.bf.chan)
+                d3                    = [size(dat_tmp.bf.chan(c).T) 1];
+                dat_tmp.bf.chan(c).B3 = spm_dctmtx(dm_s(3),d3(3),z1);
+                dat_tmp.bf.chan(c).B2 = spm_dctmtx(dm_s(2),d3(2),y1(1,:)');
+                dat_tmp.bf.chan(c).B1 = spm_dctmtx(dm_s(1),d3(1),x1(:,1));
+            end        
+            clear x1 y1 z1
+            bf = get_bf(dat_tmp.bf.chan,dm_s);
+            clear dat_tmp
+        else
+            bf = 1;
+        end
         
         % Resize deformation
         y = resize_def(y,dm_s,subsmp);
@@ -448,19 +415,19 @@ if opt.template.do && opt.template.load_a_der
     % Get responsibilities    
     Z = get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt);   
     
-    % Some verbose
-    if opt.verbose.gmm >= 3
-        % Show observed data, warped template and current responsibilities
-        show_seg(obs,Template,dat.gmm.prop,Z,dm_s,modality,chn_names,opt.model.nam_cls);
-    end
-    if opt.verbose.reg >= 3 
-         % Show initial velocities
-        show_bf_and_ivel(obs,dm_s,y);
-    end
-    if opt.verbose.bf >= 3
-        % Show bias field
-        show_bf_and_ivel(obs,dm_s,bf);
-    end
+%     % Some verbose
+%     if opt.verbose.gmm >= 3
+%         % Show observed data, warped template and current responsibilities
+%         show_seg(obs,Template,dat.gmm.prop,Z,dm_s,modality,chn_names,opt.model.nam_cls);
+%     end
+%     if opt.verbose.reg >= 3 
+%          % Show initial velocities
+%         show_bf_and_ivel(obs,dm_s,v);
+%     end
+%     if opt.verbose.bf >= 3
+%         % Show bias field
+%         show_bf_and_ivel(obs,dm_s,bf);
+%     end
     clear Template bf labels
 
     % Push responsibilities from subject space to template space
@@ -488,15 +455,5 @@ end
 if isfield(dat.mrf,'oZ') && opt.template.do
     % Remove oZ field from dat.mrf
     dat.mrf = rmfield(dat.mrf,'oZ');
-end
-
-if ~opt.template.do || (opt.template.do && it_mod == opt.model.niter)
-    %----------------------------------------------------------------------
-    % Write resulting segmentations (etc) to disk
-    %----------------------------------------------------------------------
-    
-    res = write_results(dat,model,opt);
-else
-    res = [];
-end
+end   
 %==========================================================================

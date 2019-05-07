@@ -1,4 +1,4 @@
-function [gr,H,ll] = diff_template(a,Z,prop,opt)
+function [gr,H,ll] = diff_template(a,Z,prop,opt,is_init)
 % FORMAT [gr,H,ll] = diff_template(a,Z,prop,opt)
 % a    - Current log-template warped in subject-space [Nx Ny Nz K]
 % Z    - Class responsibilities [Nx Ny Nz K]
@@ -12,6 +12,8 @@ function [gr,H,ll] = diff_template(a,Z,prop,opt)
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
+if nargin < 5, is_init = false; end
+
 % Parameters
 dm      = [size(Z),1,1,1];
 K       = dm(4);
@@ -23,10 +25,21 @@ if opt.template.sym
     Z = Z + Z(end:-1:1,:,:,:);
 end
 
-% Re-organise sufficient statistics to a form that is easier to work with
-% Z   = max(Z,eps('single')*1000);
+% Preproc sufficient statistics (here Z)
 smZ = sum(Z,4);
 msk = smZ > 0;
+
+if ~isempty(opt.template.tc_miss) && ~is_init
+    % Set missing data as being from a specific class    
+    valZ                            = mean(smZ(:));
+    Z                               = reshape(Z,[prod(dm(1:3)) K]);
+    Z(~msk(:),opt.template.tc_miss) = valZ;    
+    Z                               = reshape(Z,[dm(1:3) K]);
+    
+    smZ = sum(Z,4);
+    msk = msk >= 0; % Do not mask anymore..
+end
+
 msk = reshape(msk,[prod(dm(1:2)) dm(3)]);
 Z   = bsxfun(@rdivide,Z,smZ + eps('single'));
 mxZ = max(smZ(:));

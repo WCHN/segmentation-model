@@ -1,5 +1,7 @@
 function res = write_results(dat,model,opt)
 
+res = struct;
+
 %--------------------------------------------------------------------------
 % Image data, etc
 %--------------------------------------------------------------------------
@@ -28,7 +30,7 @@ end
 
 % Registration parameters
 subsmp = get_subsampling_grid(dm_s,vs_s,opt.seg.samp);
-prm_v  = [subsmp.sk.*vs_s ff*opt.reg.rparam*prod(subsmp.sk.*vs_s)];   
+prm_v  = [subsmp.sk.*vs_s ff*opt.reg.rparam];   
 
 % Green's function
 if opt.reg.int_args > 1, Greens = spm_shoot_greens('kernel',subsmp.dm(1:3),prm_v);
@@ -53,24 +55,6 @@ if 0
 end
 
 %--------------------------------------------------------------------------
-% Write initial velocity (v)
-%--------------------------------------------------------------------------
-
-if opt.write.df
-    Nii         = nifti;
-    Nii.dat     = file_array(fullfile(dat.dir.def,['vel_', nam{1}, '.nii']),...
-                             size(v),...
-                             [spm_type('float32') spm_platform('bigend')],...
-                             0,1,0);
-    Nii.mat     = mat_s;
-    Nii.mat0    = mat_s;
-    Nii.descrip = 'Initial velocity';
-    create(Nii);
-
-    Nii.dat(:,:,:,:) = v;
-end
-
-%--------------------------------------------------------------------------
 % Warp template to subject
 %--------------------------------------------------------------------------
 
@@ -83,11 +67,29 @@ if dm_s(3) == 1
 end
 
 %--------------------------------------------------------------------------
+% Write deformation
+%--------------------------------------------------------------------------
+
+if opt.write.df
+    Nii         = nifti;
+    Nii.dat     = file_array(fullfile(dat.dir.def,['def', nam{1}, '.nii']),...
+                             size(y),...
+                             [spm_type('float32') spm_platform('bigend')],...
+                             0,1,0);
+    Nii.mat     = mat_s;
+    Nii.mat0    = mat_s;
+    Nii.descrip = 'Initial velocity';
+    create(Nii);
+
+    Nii.dat(:,:,:,:) = y;
+end
+
+%--------------------------------------------------------------------------
 % Get bias field
 %--------------------------------------------------------------------------
 
 do_bf = opt.bf.do && strcmpi(modality,'MRI');
-if do_bf || strcmpi(modality,'MRI') 
+if do_bf
     
     if opt.seg.samp > 0
         % Adjust bias field if images were subsampled
@@ -133,7 +135,7 @@ clear Template
 %--------------------------------------------------------------------------
 
 for k=find(opt.write.tc(:,1)' == true)
-    fname = fullfile(dat.dir.seg_orig,['resp' num2str(k) nam{1} '.nii']);
+    fname = fullfile(dat.dir.seg_orig,['oc' num2str(k) nam{1} '.nii']);
     spm_misc('create_nii',fname,Z(:,:,:,k),mat_s,[spm_type('float32') spm_platform('bigend')],'Segmentation');
 end
 
@@ -144,7 +146,7 @@ end
 if opt.write.bf(2) && do_bf
     for c=1:C
         Nii         = nifti;
-        Nii.dat     = file_array(fullfile(dat.dir.bf,['BiasField_', nam{c}, '.nii']),...
+        Nii.dat     = file_array(fullfile(dat.dir.bf,['bf', nam{c}, '.nii']),...
                                  dm_s,...
                                  [spm_type('float32') spm_platform('bigend')],...
                                  0,1,0);
@@ -162,13 +164,14 @@ end
 %--------------------------------------------------------------------------
 
 % Multiply observations with bias fields
+obs = get_obs(dat,'samp',0,'mskonlynan',true); % We want to write the non-masked images
 obs = bf.*obs;
 clear bf
 
 if opt.write.bf(1)
     for c=1:C  
         Nii         = nifti;
-        Nii.dat     = file_array(fullfile(dat.dir.img,['Corrected_', nam{c}, '.nii']),...
+        Nii.dat     = file_array(fullfile(dat.dir.img,['i', nam{c}, '.nii']),...
                                  dm_s,...
                                  [spm_type('float32') spm_platform('bigend')],...
                                  0,1,0);
@@ -188,7 +191,7 @@ end
 if opt.write.bf(3)
     for c=1:C    
         Nii         = nifti;
-        Nii.dat     = file_array(fullfile(dat.dir.img,['MNI_Corrected_', nam{c}, '.nii']),...
+        Nii.dat     = file_array(fullfile(dat.dir.img,['wi', nam{c}, '.nii']),...
                                  dm_a(1:3),...
                                  [spm_type('float32') spm_platform('bigend')],...
                                  0,1,0);
@@ -213,16 +216,27 @@ clear obs x iy c
 % Some cleaning up of responsibilities
 %--------------------------------------------------------------------------
 
-if opt.clean.mrf.do
+if opt.clean.brain && dm_a(3) > 1
+    % Clean responsibilities using template, deformation and morphological operations
+    Z = clean_brain(Z,model,opt,y);                
+end
+
+if opt.clean.mrf.strength > 0
     % Ad-hoc MRF clean-up of responsibilities
     Z = mrf_post(Z,vs_s,opt);
 end
 
-if opt.clean.brain
-    % Clean responsibilities using template, deformation and morphological operations
-    [Z,msk_les] = clean_brain(Z,model,y,opt);
+if 0
+    % Some verbose
+    figure(672)
+    nr = floor(sqrt(K));
+    nc = ceil(K/nr);      
+    for k=1:K   
+        subplot(nr,nc,k)
+        imagesc3d(Z(:,:,:,k)); axis off; drawnow
+    end
 end
-
+    
 if isempty(opt.lesion.hemi) && (opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.do)
     % Try to extract binary lesion representation from lesion class of responsibilities
     
@@ -266,7 +280,7 @@ if isempty(opt.lesion.hemi) && (opt.clean.les.bwlabeln || opt.clean.les.cnn_mrf.
         
     if opt.write.les(1)
         % Write to disk
-        fname = fullfile(dat.dir.seg,['cles_' nam{1} '.nii']);
+        fname = fullfile(dat.dir.seg,['cles' nam{1} '.nii']);
         spm_misc('create_nii',fname,bin_les,mat_s,[spm_type('float32') spm_platform('bigend')],'Lesion (native)');
 
         res.cles = nifti(fname);
@@ -283,7 +297,7 @@ end
 % Write DARTEL imports
 %--------------------------------------------------------------------------
 
-if opt.write.import && dm_s(3) > 1 
+if any(opt.write.tc(:,5) == true) && dm_s(3) > 1 
     write_dartel(Z,y,mat_s,dm_s,dm_a,mat_a,vs_a,vs_s,dat.dir.seg,nam{1},opt);
 end
 
@@ -319,12 +333,27 @@ if any(opt.write.tc(:,3) == true)
     clear s C
 end
 
+if any(opt.write.tc(:,4) == true)
+    % Modulated, warped to template space
+    
+    for k=find(opt.write.tc(:,4)' == true)   
+        c = spm_diffeo('push',Z(:,:,:,k),y,dm_a(1:3));
+        c = c*abs(det(mat_s(1:3,1:3))/det(mat_a(1:3,1:3)));
+        
+        fname = fullfile(dat.dir.seg,['mwc' num2str(k) nam{1} '.nii']);
+        spm_misc('create_nii',fname,c,mat_a,[spm_type('float32') spm_platform('bigend')],'Segmentation (modulate template)');
+
+        res.mwc{k} = nifti(fname);
+    end
+    clear c
+end
+
 if ((opt.clean.les.cnn_mrf.do || opt.clean.les.bwlabeln) && opt.write.les(2))
     [c,w]   = spm_diffeo('push',bin_les,y,dm_a(1:3));    
     bin_les = spm_field(w,c,[vs_a  1e-6 1e-4 0  3 2]);
     clear w c
     
-    fname = fullfile(dat.dir.seg,['wcles_' nam{1} '.nii']);
+    fname = fullfile(dat.dir.seg,['wcles' nam{1} '.nii']);
     spm_misc('create_nii',fname,bin_les > opt.clean.les.val,mat_a,[spm_type('float32') spm_platform('bigend')],'Lesion (template)');
     clear bin_les
     
@@ -442,6 +471,10 @@ lnDetbf = log(prod(slice.bf,2));
 % Compute ln(p(x))
 lnpX = spm_gmm_lib('Marginal', BX, [{MU} prec], const, {slice.code,miss.L}, slice.bin_var);
 
+for k=1:numel(lkp)
+    lnpX(slice.code == 0,k) = log(1e-3);
+end
+
 % Compute ln(p(z))
 if isempty(slice.template)   
     lnPI         = reshape(prop,[],numel(prop));
@@ -463,6 +496,10 @@ lnpX(:,ix_tiny) = lntiny;
 
 % Compute responsibilities
 Z = spm_gmm_lib('Responsibility', lnpX,  lnPI,         lnDetbf,   lnPl,log(mg),lnPzN);   
+
+% for k=1:numel(lkp)
+%     Z(slice.code == 0,k) = 0;
+% end
 %==========================================================================
 
 %==========================================================================
@@ -475,6 +512,7 @@ function write_dartel(Z,y,mat_s,dm_s,dm_a,mat_a,vx_a,vx_s,pth,nam,opt)
 
 K       = size(Z,4);
 [~,fg0] = get_par('bg_fg',opt.seg.bg,K);
+tc      = opt.write.tc(:,5);
 
 % Generate mm coordinates of where deformations map from
 x = affind(rgrid(dm_s(1:3)),mat_s);
@@ -493,7 +531,7 @@ clear x y1
 mat0 = R\mat_a; 
 
 fwhm = max(vx_a./vx_s - 1,0.01);
-for k=1:K  
+for k=find(tc' == true) 
     % Low pass filtering to reduce aliasing effects in downsampled images,
     % then reslice and write to disk
     tmp1 = decimate(Z(:,:,:,k),fwhm);

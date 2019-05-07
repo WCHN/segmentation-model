@@ -36,8 +36,8 @@ if opt.template.do
     [model,dat] = update_template(dat,model,opt,true);
     fprintf('done!\n')
     
-    if opt.verbose.model >= 3, show_segmentations(dat,opt); end
-    if opt.verbose.model >= 3, show_PropPrior(dat,model,opt); end
+    if opt.verbose.model >= 3, show_tissues(dat,model,opt); end
+%     if opt.verbose.model >= 3, show_PropPrior(dat,model,opt); end
 else  
     % When segmenting a single subject
     [dat,model,opt] = load_model(dat,opt); % Get model parameters (model)        

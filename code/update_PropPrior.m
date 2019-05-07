@@ -72,8 +72,8 @@ end
 model.PropPrior.alpha = alpha;
 model.PropPrior.norm  = S0*(gammaln(sum(alpha)) - sum(gammaln(alpha)));
 
-% Show results
-show_PropPrior(dat,model,opt);
+% % Show results
+% show_PropPrior(dat,model,opt);
 
 % Save updated PropPrior
 PropPrior = model.PropPrior;

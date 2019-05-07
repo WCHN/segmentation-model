@@ -27,13 +27,13 @@ y1 = spm_warps('transform',Affine,y);
 if dm(3) == 1
     y1(:,:,:,3) = 1;
 end
-dA     = zeros(4,4,Nr);
+dA = zeros(4,4,Nr);
 for i1=1:Nr
-    dA(:,:,i1) = mat_a\dE(:,:,i1)*mat_s;
+    dA(:,:,i1) = double(mat_a\dE(:,:,i1)*mat_s);
 end
 lkp    = [1 4 5; 4 2 6; 5 6 3];
-ga     = zeros([Nr, 1],'single');
-Ha     = zeros([Nr,Nr],'single');
+ga     = zeros([Nr, 1]);
+Ha     = zeros([Nr,Nr]);
    
 [dlb,mom] = gmm_img('init_lb_and_mom',miss);
 
@@ -74,12 +74,14 @@ for z=1:dm(3)
     end
     
     [gz,Hz] = mnom_objfun_slice(Z,Template0,y1,z,prop);
-
+    gz      = double(gz);
+    Hz      = double(Hz);
+    
     % Compute affine gradient and Hessian
     dAff = cell(Nr,3);
     for i1=1:Nr
         for d1=1:3
-            tmp = dA(d1,1,i1)*y(:,:,z,1) + dA(d1,2,i1)*y(:,:,z,2) + dA(d1,3,i1)*y(:,:,z,3) + dA(d1,4,i1);
+            tmp = dA(d1,1,i1)*double(y(:,:,z,1)) + dA(d1,2,i1)*double(y(:,:,z,2)) + dA(d1,3,i1)*double(y(:,:,z,3)) + dA(d1,4,i1);
             dAff{i1,d1} = tmp(:);
         end
     end
@@ -126,7 +128,7 @@ end
 
 % Fill in missing triangle
 for i1=1:Nr
-    for i2=1:Nr
+    for i2=(i1+1):Nr
         Ha(i2,i1) = Ha(i1,i2);
     end
 end

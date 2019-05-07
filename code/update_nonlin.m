@@ -114,7 +114,7 @@ else
     [opt,nscl,oscl] = modify_opt(opt,it_seg);     
 end
 
-prm  = [sk.*vs ff*opt.reg.rparam*prod(sk.*vs)];
+prm = [sk.*vs ff*opt.reg.rparam];
 
 if int_args > 1
     % Large deformation

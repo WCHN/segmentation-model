@@ -28,41 +28,61 @@ rater_sens = opt.sched.labels(min(numel(opt.sched.labels),iter));
 K          = opt.template.K;    % Number of template classes
 
 if ~cm.isKey(population)
-    ix = zeros(1,K);
+    AL = zeros(1,K);
 else
-    ix = cm(population);
-end
-
-if numel(ix)~=K
-    error('numel(cm_p)~=K')
+    AL = cm(population);
 end
 
 %--------------------------------------------------------------------------
 % Build confusion matrix 
 %--------------------------------------------------------------------------
 
-ix_ul = max(ix) + 1;    % Unlabelled voxels (0) are assumed to have value: num(labels) + 1
-CM    = zeros(ix_ul,K); % Confusion matrix is of size: (num(labels) + 1) x num(tissue)
-ix_k  = ix == 0; 
+%% 
+% M = [0 0 0 0 1 0 0 0 0 0; ...
+%      0 0 0 0 0 0 0 1 0 0; ...
+%      0 0 0 0 0 0 1 0 0 0; ...
+%      0 0 1 0 0 0 0 0 0 0; ...
+%      0 0 0 0 0 0 1 1 0 0; ...
+%      0 0 0 0 0 0 0 0 1 0; ...
+%      1 1 0 1 0 1 0 0 0 1];
+% 
+% M = {[5],[8],[7],[3],[7 8],[9],{[1 2 4 5 10],[9]}};
 
-% For the unlabelled voxels, we assume close to uniform probability
-CM(ix_ul, ix_k) = opt.gmm.labels.Su;
-CM(ix_ul,~ix_k) = 1 - opt.gmm.labels.Su;    
-
-% For the labelled voxels, we define probabilities from a user-given
-% rater sensitivity
-for k=ix
-    if k == 0
-        % Skip unlabelled
-        continue; 
-    end
-
-    ix_k        = ix == k;
-    CM(k, ix_k) = rater_sens/nnz(ix_k);
-    CM(k,~ix_k) = (1 - rater_sens)/nnz(~ix_k);
+L  = numel(AL);    % Number of labels
+CM = zeros([L K]); % Allocate confusion matrix
+for l=1:L % Loop over labels
+    
+    ix        = false(1,K);
+    ix(AL{l}) = true;
+    
+    CM(l,ix)  = rater_sens/nnz(ix); 
+    CM(l,~ix) = (1 - rater_sens)/nnz(~ix);
 end
 
-% Normalise confusion matrix
 CM = bsxfun(@rdivide,CM,sum(CM,2));
+
+% ix_ul = max(ix) + 1;    % Unlabelled voxels (0) are assumed to have value: num(labels) + 1
+% CM    = zeros(ix_ul,K); % Confusion matrix is of size: (num(labels) + 1) x num(tissue)
+% ix_k  = ix == 0; 
+% 
+% % For the unlabelled voxels, we assume close to uniform probability
+% CM(ix_ul, ix_k) = opt.gmm.labels.Su;
+% CM(ix_ul,~ix_k) = 1 - opt.gmm.labels.Su;    
+% 
+% % For the labelled voxels, we define probabilities from a user-given
+% % rater sensitivity
+% for k=ix
+%     if k == 0
+%         % Skip unlabelled
+%         continue; 
+%     end
+% 
+%     ix_k        = ix == k;
+%     CM(k, ix_k) = rater_sens/nnz(ix_k);
+%     CM(k,~ix_k) = (1 - rater_sens)/nnz(~ix_k);
+% end
+% 
+% % Normalise confusion matrix
+% CM = bsxfun(@rdivide,CM,sum(CM,2));
 
 return

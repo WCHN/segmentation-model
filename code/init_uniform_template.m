@@ -14,8 +14,10 @@ function model = init_uniform_template(dat,opt)
 K         = opt.template.K;
 dir_model = opt.dir_model;
 S0        = numel(dat);
-vs        = opt.template.vs;
-
+vx        = opt.template.vs;
+keep_neck = opt.template.keep_neck;
+do_resiz  = opt.template.resize;
+    
 % Collect orientation matrices and dimensions from all input images
 %--------------------------------------------------------------------------
 mats = [];
@@ -42,7 +44,28 @@ for s=1:S0
 end
 
 % Compute average orientation matrix and dimensions
+%--------------------------------------------------------------------------
 [M,d] = spm_misc('compute_avg_mat',mats,dms);
+
+if keep_neck
+    % If we model spine, remove a little bit of the bottom of the template
+    V.dim = d;
+    V.mat = M;
+    bb    = world_bb(V);
+
+    mrg = 25; % mm to remove from bottom (we are in world space, and vx = 1)
+    if d(3) == 1
+        bb(1,2) = bb(1,2) + mrg;
+    else
+        bb(1,3) = bb(1,3) + mrg;
+    end
+    
+    mn = bb(1,:);
+    mx = bb(2,:);
+    M  = spm_matrix([mn 0 0 0 ones(1,3)])*spm_matrix([-1 -1 -1]);    
+    d  = ceil(M \ [mx 1]' - 0.1)';
+    d  = d(1:3);
+end
 
 % Write template to disk
 %--------------------------------------------------------------------------
@@ -73,31 +96,25 @@ end
 model              = struct;
 model.template.nii = nifti(pth_template);
 
-
-if opt.template.resize && d(3) > 1
-    % Crop and change voxel sizes (only for 3D)
-    model = resize_template(model,opt);
-    d     = model.template.nii.dat.dim;
-elseif ~isempty(opt.template.vs)
-    % Change voxel sizes
+% Change voxel size and/or crop template
+if ~isempty(vx) && d(3) == 1
     dm0  = d;
     mat0 = M;
     vx0  = sqrt(sum(mat(1:3,1:3).^2));
-    vx   = opt.template.vs;
-    
+       
     % New orientation matrix and dimensions
-    ds  = vx0./vx;
-    D   = diag([ds 1]);
-    mat = mat0/D;
-    dm  = floor(D(1:3,1:3)*dm0')';
-    if d(3) == 1
-        dm(3) = 1;
-    end
+    ds    = vx0./vx;
+    D     = diag([ds 1]);
+    mat   = mat0/D;
+    dm    = floor(D(1:3,1:3)*dm0')';    
+    dm(3) = 1;
 
-    % Save down-sampled template
-    model.template.nii = spm_misc('create_nii',pth_template,zeros([dm K],'single'),mat,[spm_type('float32') spm_platform('bigend')],'template');    
-    
-    d = dm;
+    % Update template
+    model.template.nii = spm_misc('create_nii',pth_template,zeros([dm K],'single'),mat,[spm_type('float32') spm_platform('bigend')],'template');        
+    d                  = dm;
+elseif (opt.template.resize || ~isempty(vx)) && d(3) > 1    
+    model     = resize_template(model,do_resiz,vx,keep_neck);
+    d         = model.template.nii.dat.dim;
 end
 
 if ~isempty(opt.lesion.hemi)

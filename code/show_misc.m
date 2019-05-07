@@ -1,5 +1,5 @@
-function show_segmentations(dat,opt)
-% FORMAT show_segmentations(dat,opt)
+function show_misc(dat,opt)
+% FORMAT show_misc(dat,opt)
 % dat - Subjects data structure
 % opt - Options structure
 %
@@ -7,7 +7,7 @@ function show_segmentations(dat,opt)
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
-figname = '(SPM) Sample: Images, segmentations';
+figname = '(SPM) Sample: Images, histograms, proportions, lower bounds';
 
 % ---------------------------------------------------------------------
 % Get figure (create if it does not exist)
@@ -21,11 +21,11 @@ clf(f);
 populations = spm_json_manager('get_populations',dat);
 P           = numel(populations);
 S0          = numel(dat);
+K           = opt.template.K;
 
 nrows         = min(S0,opt.verbose.mx_rows); 
 nrows_per_pop = floor(nrows/P);
-K             = opt.template.K;
-ncols         = K + 1;
+ncols         = 5;
 
 cnt_plots = 1;
 for p=1:P
@@ -57,21 +57,37 @@ for p=1:P
             else
                 imagesc(img1); axis off xy;
             end
-            colormap(sb,gray)        
+            colormap(sb,gray)                             
             
-            % Z
-            nii = nifti(dat{s}.pth.seg2d);    
-            Z   = single(nii.dat(:,:,:,:));
+            % Histogram (native)      
+            subplot(nrows,ncols,2 + (cnt_plots - 1)*ncols);
+            hist(img(:),100);
+            set(gca,'ytick',[])
             
-            img = [];
-            for k=1:size(Z,4)
-                img = [img Z(:,:,:,k)'];
-            end
-
-            sb = subplot(nrows,ncols,[2:ncols - 1] + (cnt_plots - 1)*ncols);
-            imagesc(img,[0 1]); axis off xy;             
-            colormap(sb,gray)
+            % Histogram (corrected)      
+            subplot(nrows,ncols,3 + (cnt_plots - 1)*ncols);
+            hist(img1(:),100);
+            set(gca,'ytick',[])   
                    
+            % Proportions
+            subplot(nrows,ncols,4 + (cnt_plots - 1)*ncols);
+            PI  = dat{s}.gmm.prop;
+            PI = spm_matcomp('softmax',PI);
+            mg  = dat{s}.gmm.part.mg;            
+            lkp = dat{s}.gmm.part.lkp;
+            colors = hsv(max(lkp));
+            PI  = mg.*PI(:,lkp);
+            hold on
+            for k=1:numel(lkp)
+                bar(k, PI(k), 'FaceColor', colors(lkp(k),:));
+            end
+            box on
+            hold off
+            
+            % lower bound            
+            sb = subplot(nrows,ncols,ncols + (cnt_plots - 1)*ncols);
+            plot(dat{s}.lb.sum); axis off;
+            
             cnt_plots = cnt_plots + 1;
                         
             if (p < P  && cnt == nrows_per_pop) || ...

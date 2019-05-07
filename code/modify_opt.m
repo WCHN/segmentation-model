@@ -17,7 +17,7 @@ sched = opt.sched;
 
 if isfield(opt,'template') && isfield(opt.template,'reg0')
     % Template regularisation decreases with iteration number
-    opt.template.reg  = [opt.template.reg0(1:2) sched.a(min(numel(sched.a),iter))*opt.template.reg0(3)];        
+    opt.template.reg  = [opt.template.reg0(1:2) sched.a(min(numel(sched.a),max(iter - opt.reg.strt_nl + 1,1)))*opt.template.reg0(3)];        
 end
 
 if isfield(opt,'gmm')

@@ -11,7 +11,7 @@ function [opt,holly] = default_opt(opt)
 % GENERAL
 % -------
 % opt.sched
-%mskonlynan
+%
 % MODEL
 % -----
 % opt.model.it           - Number of current VEM iterations
@@ -38,6 +38,8 @@ function [opt,holly] = default_opt(opt)
 % opt.gmm.labels.Su       - Rater sensitivity for unlabelled voxels
 % opt.gmm.GaussPrior.constrained - Constrain class variance to be similar
 % opt.gmm.GaussPrior.verbose     - Verbosity when updating GMM prior
+% opt.gmm.GaussPrior.mods  - If we wanna share, let's say, one prior over
+%                            all CTs
 %
 % TEMPLATE
 % -----
@@ -60,6 +62,12 @@ function [opt,holly] = default_opt(opt)
 %                             template using resize_template()
 % opt.template.keep_neck    - Keep or remove neck region in
 %                             resize_template()
+% opt.template.clean.its    - Iterations at when to clean template
+% opt.template.clean.brain  - Brain classes for template cleaning
+% opt.template.clean.les    - Lesion class for template cleaning
+% opt.template.clean.air    - Air class for template cleaning
+% opt.template.tc_miss      - Tell the algorithm to which tissue class the
+%                             missing data belong
 %
 % REGISTRATION
 % ------------
@@ -121,7 +129,6 @@ function [opt,holly] = default_opt(opt)
 % CLEANING
 % --------
 % opt.clean.brain               - Do ad-hock brain clean-up with clean_brain()
-% opt.clean.mrf.do              - Post-processing using linear MRF
 % opt.clean.mrf.strength        - Diagonal value of linear MRF
 % opt.clean.mrf.niter           - Number of post MRF iterations
 % opt.clean.les.bwlabeln        - Try to extract lesion by connected
@@ -162,6 +169,9 @@ function [opt,holly] = default_opt(opt)
 %                         processed
 %                         tc(1:K,3): Template space responsibilities, post
 %                         processed
+%                         tc(1:K,4): Modulated template space responsibilities, post
+%                         processed
+%                         tc(1:K,5): DARTEL imports
 % opt.write.bf          - Write bias field:
 %                         bf(1): Bias field corrected image in subject
 %                         space
@@ -171,7 +181,6 @@ function [opt,holly] = default_opt(opt)
 % opt.write.df          - Write initial velocities?
 % opt.write.ml          - Write maximum-likelihood labels?
 % opt.write.les         - Write lesion masks?
-% opt.write.import      - Write DARTEL imports?
 % opt.dir_output_train  - Folder to write model (= population) data
 % opt.dir_output_seg    - Folder to write segmentation (= subject) data
 %
@@ -203,8 +212,7 @@ function [opt,holly] = default_opt(opt)
 
 if nargin < 1, opt = struct; end
 
-START_NL_TEMPL = 1;
-def            = spm_shoot_defaults;
+def = spm_shoot_defaults;
 
 % opt
 if ~isfield(opt,'dir_output')
@@ -288,6 +296,12 @@ end
 if ~isfield(opt.gmm.GaussPrior,'verbose') 
     opt.gmm.GaussPrior.verbose     = true; % [true,false]
 end
+if ~isfield(opt.gmm.GaussPrior,'mods') 
+    opt.gmm.GaussPrior.mods        = {};
+end
+if ~iscell(opt.gmm.GaussPrior.mods)
+    opt.gmm.GaussPrior.mods = {opt.gmm.GaussPrior.mods};
+end
 
 % opt.gmm.labels
 if ~isfield(opt.gmm,'labels') 
@@ -368,13 +382,44 @@ end
 if ~isfield(opt.template,'keep_neck')
     opt.template.keep_neck    = false;
 end
+if ~isfield(opt.template,'clean')
+    opt.template.clean        = struct;
+end
+if ~isfield(opt.template.clean,'its')
+    opt.template.clean.its    = [];
+end
+if ~isfield(opt.template.clean,'brain')
+    opt.template.clean.brain  = [];
+end
+if ~isfield(opt.template.clean,'les')
+    opt.template.clean.les    = [];
+end
+if ~isfield(opt.template.clean,'air')
+    opt.template.clean.air    = [];
+end
+if ~isfield(opt.template,'tc_miss')
+    opt.template.tc_miss      = [];
+end
+if ~isfield(opt.template.clean,'val_brain')
+    opt.template.clean.val_brain = 0.3;
+end
+if ~isfield(opt.template.clean,'val_air')
+    opt.template.clean.val_air   = 0.3;
+end
+if ~isfield(opt.template.clean,'dil_er')
+    opt.template.clean.dil_er   = false;
+end
+if ~isfield(opt.template.clean,'it_dil_er')
+    opt.template.clean.it_dil_er   = 8;
+end
 
 % opt.reg
 if ~isfield(opt,'reg') 
     opt.reg              = struct;
 end
 if ~isfield(opt.reg,'rparam0') 
-    opt.reg.rparam0      = [0 0.005 0.2 0.025 0.05];
+    opt.reg.rparam0 = def.rparam;
+%     opt.reg.rparam0      = [1e-4  1e-1 2 0.25 0.5]*0.01;%[0 0.005 0.2 0.025 0.05];
 end
 if ~isfield(opt.reg,'rparam') 
     % [absolute displacements, laplacian, bending energy, linear elasticity mu, linear elasticity lambda]
@@ -390,10 +435,14 @@ if ~isfield(opt.reg,'tol')
     opt.reg.tol          = 1e-4;
 end
 if ~isfield(opt.reg,'strt_nl') 
-    opt.reg.strt_nl      = START_NL_TEMPL;
+    if opt.template.do
+        opt.reg.strt_nl      = 4;
+    else
+        opt.reg.strt_nl      = 1;
+    end
 end
 if ~isfield(opt.reg,'mc_aff') 
-    opt.reg.mc_aff       = false;
+    opt.reg.mc_aff       = true;
 end
 if ~isfield(opt.reg,'aff_type') 
     opt.reg.aff_type     = 'similitude'; % ['translation','rotation','rigid','similitude','affine']
@@ -498,7 +547,7 @@ if ~isfield(opt,'prop')
     opt.prop         = struct;
 end
 if ~isfield(opt.prop,'niter')
-    opt.prop.niter   = 3;
+    opt.prop.niter   = 1;
 end
 if ~isfield(opt.prop,'gnniter')
     opt.prop.gnniter = 1;
@@ -545,11 +594,8 @@ end
 if ~isfield(opt.clean,'mrf') 
     opt.clean.mrf          = struct;
 end
-if ~isfield(opt.clean.mrf,'do')
-    opt.clean.mrf.do       = true;
-end
 if ~isfield(opt.clean.mrf,'strength')
-    opt.clean.mrf.strength = 2;
+    opt.clean.mrf.strength = 1;
 end
 if ~isfield(opt.clean.mrf,'niter')
     opt.clean.mrf.niter    = 10;
@@ -592,13 +638,13 @@ if ~isfield(opt.start_it,'do_mg')
     opt.start_it.do_mg      = 1;
 end
 if ~isfield(opt.start_it,'do_prop')
-    opt.start_it.do_prop    = 1;
+    opt.start_it.do_prop    = opt.reg.strt_nl + 1;
 end
 if ~isfield(opt.start_it,'do_upd_mrf')
-    opt.start_it.do_upd_mrf = 1;
+    opt.start_it.do_upd_mrf = opt.reg.strt_nl + 1;
 end
 if ~isfield(opt.start_it,'upd_mg')
-    opt.start_it.upd_mg = 1;
+    opt.start_it.upd_mg = opt.reg.strt_nl + 1;
 end
 
 % opt.do
@@ -614,7 +660,7 @@ end
 if ~isfield(opt.do,'mrf')
     opt.do.mrf        = false;
 end
-if opt.do.mrf
+if opt.do.mrf && opt.seg.samp > 0
     error('opt.do.mrf = true does not work at the moment, need to implement resizing of Z...')
 end
 
@@ -651,7 +697,9 @@ if ~isfield(opt,'write')
     opt.write        = struct;
 end
 if ~isfield(opt.write,'tc')
-    opt.write.tc     = true(opt.template.K,3); % [native-orig,native-final,template-final]
+    opt.write.tc     = true(opt.template.K,5); % [native-orig,native-final,template-final,modulated-template-final,dartel]
+elseif size(opt.write.tc,2) ~=5
+    opt.write.tc     = true(opt.template.K,5);
 end
 if ~isfield(opt.write,'bf')
     opt.write.bf     = true(1,3); % [native-im,bf,template-im]
@@ -664,9 +712,6 @@ if ~isfield(opt.write,'ml')
 end
 if ~isfield(opt.write,'les')
     opt.write.les    = true(1,2);
-end
-if ~isfield(opt.write,'import')
-    opt.write.import = false;
 end
 
 % opt.dict
@@ -693,7 +738,7 @@ if ~isfield(opt.verbose,'level')
     opt.verbose.level   = 2;
 end
 if ~isfield(opt.verbose,'mx_rows') 
-    opt.verbose.mx_rows = 10;
+    opt.verbose.mx_rows = 8;
 end
 if ~isfield(opt.verbose,'model') 
     opt.verbose.model = 0; % [0,1,2,3]
@@ -725,27 +770,17 @@ if ~strcmpi(holly.mode,'for')
     opt.verbose.mrf  = 0;
 end
 
-% options when training
 if opt.template.do 
-    opt.seg.niter   = 1;                  
-    
-    opt.gmm.labels.use = true;           
-    opt.bf.mc_bf       = true;    
-                    
+    % Some options when training                                        
     if opt.template.load_a_der
         opt.template.verbose = 1;        
     else        
         opt.template.verbose = 2;        
     end
     opt.verbose.model    = 3; 
-    opt.bf.mc_bf_verbose = true;     
-    
-    opt.start_it.do_mg      = 1;
-    opt.start_it.upd_mg     = 3; % 5
-    opt.start_it.do_prop    = 3; % 5    
-    opt.start_it.do_upd_mrf = 3;
+    opt.bf.mc_bf_verbose = true;    
 end
 
 opt.dir_output_train = fullfile(opt.dir_output,'train');
-opt.dir_output_seg   = fullfile(opt.dir_output,'segment');
+opt.dir_output_seg   = fullfile(opt.dir_output,'subject-results');
 %==========================================================================

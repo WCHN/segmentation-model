@@ -8,10 +8,13 @@ function varargout = SegModel(varargin)
 % opt = SegModel('train',dat,opt)
 % > Train segmentation model from a bunch of images
 %
-% opt = SegModel('continue',dat,model,opt,holly);
+% opt = SegModel_continue(pth_dat,pth_model,pth_opt,pth_holly)
 % > Continue training segmentation model from a bunch of images
 %
 % res = SegModel('segment',dat,opt)
+% > Segment images with trained segmentation model
+%
+% res = SegModel('write',pth_dat,pth_model,pth_opt,pth_holly)
 % > Segment images with trained segmentation model
 %
 % Arguments
@@ -35,6 +38,8 @@ switch lower(id)
         [varargout{1:nargout}] = SegModel_continue(varargin{:});         
     case 'segment'
         [varargout{1:nargout}] = SegModel_segment(varargin{:});           
+    case 'write'
+        [varargout{1:nargout}] = SegModel_write(varargin{:});         
     otherwise
         help run_SegModel
         error('Unknown function %s. Type ''help run_SegModel'' for help.', id)
@@ -46,6 +51,10 @@ function opt = SegModel_train(dat,opt)
 % Train segmentation model from a bunch of images
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
+
+%--------------------------------------------------------------------------
+% Init paths, etc.
+%--------------------------------------------------------------------------
 
 dat = SegModel_init(dat,opt);
 
@@ -59,12 +68,16 @@ dat = SegModel_init(dat,opt);
 % Initialise model
 %--------------------------------------------------------------------------
 
+make_animations('clear');
+
 [dat,model,opt] = init_all(dat,opt);
 model.lb        = -Inf;
 
 %--------------------------------------------------------------------------
 % Train model
 %--------------------------------------------------------------------------
+
+save_stuff(opt.dir_model,dat,opt,model,holly);
 
 for it_mod=1:opt.model.niter                            
     
@@ -74,16 +87,36 @@ end
 %==========================================================================
 
 %==========================================================================
-function opt = SegModel_continue(dat,model,opt,holly)
+function opt = SegModel_continue(pth_dat,pth_model,pth_opt,pth_holly)
 % Continue training segmentation model from a bunch of images
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
 %--------------------------------------------------------------------------
+% Load variables (dat, model, opt, holly)
+%--------------------------------------------------------------------------
+
+var   = load(pth_dat);
+dat   = var.dat;
+var   = load(pth_model);
+model = var.model;
+var   = load(pth_opt);
+opt   = var.opt;
+var   = load(pth_holly);
+holly = var.holly;
+clear var
+
+%--------------------------------------------------------------------------
+% Init paths, etc.
+%--------------------------------------------------------------------------
+
+SegModel_init(dat,opt);
+
+%--------------------------------------------------------------------------
 % Continue training model
 %--------------------------------------------------------------------------
 
-for it_mod=opt.model.it:opt.model.niter   
+for it_mod=(opt.model.it + 1):opt.model.niter   
     
     [dat,model,opt,holly] = SegModel_iter(dat,model,opt,holly,it_mod);
     
@@ -91,10 +124,47 @@ end
 %==========================================================================
 
 %==========================================================================
-function res = SegModel_segment(dat,opt)
+function opt = SegModel_write(pth_dat,pth_model,pth_opt,pth_holly)
+% Continue training segmentation model from a bunch of images
+% _______________________________________________________________________
+%  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
+
+%--------------------------------------------------------------------------
+% Load variables (dat, model, opt, holly)
+%--------------------------------------------------------------------------
+
+var   = load(pth_dat);
+dat   = var.dat;
+var   = load(pth_model);
+model = var.model;
+var   = load(pth_opt);
+opt   = var.opt;
+var   = load(pth_holly);
+holly = var.holly;
+clear var
+
+%--------------------------------------------------------------------------
+% Init paths, etc.
+%--------------------------------------------------------------------------
+
+SegModel_init(dat,opt);
+
+%--------------------------------------------------------------------------
+% Write segmentation results
+%--------------------------------------------------------------------------
+
+[~,~] = distribute(holly,'write_results','inplace',dat,model,opt);
+%==========================================================================
+
+%==========================================================================
+function opt = SegModel_segment(dat,opt)
 % Segment images with trained segmentation model
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
+
+%--------------------------------------------------------------------------
+% Init paths, etc.
+%--------------------------------------------------------------------------
 
 dat = SegModel_init(dat,opt);
 
@@ -114,7 +184,8 @@ dat = SegModel_init(dat,opt);
 % Segment subject(s)
 %--------------------------------------------------------------------------
                
-[~,~,res] = distribute(holly,'segment_subject','inplace',dat,'iter',model,opt);  
+[~,dat] = distribute(holly,'segment_subject','inplace',dat,'iter',model,opt);  
+[~,~]   = distribute(holly,'write_results','inplace',dat,'iter',model,opt);      
 %==========================================================================
 
 %==========================================================================
@@ -124,6 +195,9 @@ function [dat,model,opt,holly] = SegModel_iter(dat,model,opt,holly,it_mod)
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
 opt.model.it = it_mod;
+
+% Make animation of algorithm progress
+make_animations('savefigs',opt,it_mod);
 
 % Set-up loading template derivatives from disk       
 dat = init_load_a_der(dat,opt);
@@ -146,6 +220,11 @@ dat = meancorrect_bf(dat,model.GaussPrior,opt);
 % Update template	    
 model = update_template(dat,model,opt);           
 
+if ~isempty(opt.template.clean.its) && ismember(it_mod,opt.template.clean.its)
+    % Ad-hoc template clean-up routine
+    model = clean_template(model,opt,true);
+end
+
 % Update Gauss-Wishart hyper-parameters	    
 model = update_GaussPrior(dat,model,opt); 
 
@@ -163,24 +242,27 @@ end
 
 % Some verbose
 if opt.verbose.model >= 2, plot_model_lb(dat,model,it_mod,opt); end
-if opt.verbose.model >= 3, show_segmentations(dat,opt); end
-if opt.verbose.model >= 3, show_registration(dat,opt); end
+if opt.verbose.model >= 3, show_tissues(dat,model,opt); end
+if opt.verbose.model >= 3, show_params(dat,model,opt); end
 
 % Save some variables
-fname = fullfile(opt.dir_model,'dat.mat');
-save(fname,'dat','-v7.3');    
-fname = fullfile(opt.dir_model,'opt.mat');
-save(fname,'opt','-v7.3');
-fname = fullfile(opt.dir_model,'model.mat');
-save(fname,'model','-v7.3');
-fname = fullfile(opt.dir_model,'holly.mat');
-save(fname,'holly','-v7.3');
+save_stuff(opt.dir_model,dat,opt,model,holly);
 
-if it_mod == opt.model.niter && opt.model.clean_up
-    % Clean-up temporary files
-    rmdir(opt.dir_vel,'s');
-    rmdir(opt.dir_a_der,'s');
-    rmdir(opt.dir_seg2d,'s');
+if it_mod == opt.model.niter 
+    
+    % Write segmentation results
+    [~,~] = distribute(holly,'write_results','inplace',dat,model,opt);           
+
+    % Make animation of algorithm progress
+    make_animations('savefigs',opt,it_mod);
+    make_animations('make',opt,it_mod);
+    
+    if opt.model.clean_up
+        % Clean-up temporary files
+        rmdir(opt.dir_vel,'s');
+        rmdir(opt.dir_a_der,'s');
+        rmdir(opt.dir_seg2d,'s');
+    end
 end
 %==========================================================================
 
@@ -252,4 +334,16 @@ if ischar(dat)
         dat = dat(1);
     end
 end
+%==========================================================================
+
+%==========================================================================
+function save_stuff(dir_save,dat,opt,model,holly)
+fname = fullfile(dir_save,'dat.mat');
+save(fname,'dat','-v7.3');    
+fname = fullfile(dir_save,'opt.mat');
+save(fname,'opt','-v7.3');
+fname = fullfile(dir_save,'model.mat');
+save(fname,'model','-v7.3');
+fname = fullfile(dir_save,'holly.mat');
+save(fname,'holly','-v7.3');
 %==========================================================================

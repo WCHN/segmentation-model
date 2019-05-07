@@ -33,6 +33,7 @@ else
     if int_args == Inf
         % Pick a suitable number of Euler iterations heuristically
         eul_its = max(double(floor(sqrt(max(max(max( sum(v.^2, 4) ))))) + 1),2);
+        eul_its = min(eul_its,12);
     else
         eul_its = int_args;
     end

@@ -7,7 +7,7 @@ tiny    = get_par('tiny');
 % Set posteriors
 %--------------------------------------------------------------------------
 parfor s=1:S0    
-% for s=1:S0
+% for s=1:S0, fprintf('obs! for s=1:S0\n')
     
     modality    = dat{s}.modality{1}.name;   
     dm          = obs_info(dat{s}); 

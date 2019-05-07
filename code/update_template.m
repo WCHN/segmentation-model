@@ -80,9 +80,9 @@ else
         gr = zeros([dm(1:3),K-1],'single');                % 1st derivatives    
         ll = 0;                                            % Template log-likelihood
         
-%         for s=1:S0
-        parfor s=1:S0             
-            
+        parfor s=1:S0        
+%         for s=1:S0, fprintf('obs! for s=1:S0\n')
+                         
             if is_init
                 samp = 0;
             else
@@ -96,10 +96,14 @@ else
             grd                                              = [];            
             
             % Misc parameters            
-            ff       = get_ff(vs_s);     
-            prop     = dat{s}.gmm.prop;
-            prm_v    = [subsmp.sk.*vs_s ff*prm_reg*prod(subsmp.sk.*vs_s)];
-            modality = dat{s}.modality{1}.name; 
+            ff        = get_ff(vs_s);     
+            prop      = dat{s}.gmm.prop;
+            if is_init
+                prm_v = [vs_s ff*prm_reg];
+            else
+                prm_v = [subsmp.sk.*vs_s ff*prm_reg];                
+            end
+            modality  = dat{s}.modality{1}.name; 
             
             % Get initial velocity field
             if is_init
@@ -115,8 +119,8 @@ else
             end            
             
             % Get bias field
-            do_bf  = opt.bf.do && strcmpi(modality,'MRI');
-            if do_bf || strcmpi(modality,'MRI') 
+            do_bf = opt.bf.do && strcmpi(modality,'MRI');
+            if do_bf
                 if is_init
                     [x1,y1] = ndgrid(1:dm_s(1),1:dm_s(2),1);
                     z1      = 1:dm_s(3);
@@ -144,9 +148,7 @@ else
 
             % Generates deformations from initial velocity fields by
             % gedesic shooting (if opt.reg.int_args > 1)
-            y      = make_deformation(v,prm_v,int_args,Greens);
-            Greens = [];
-            v      = [];
+            y = make_deformation(v,prm_v,int_args,Greens);
             
             % Compute affine transformation matrix
             E      = spm_dexpm(dat{s}.reg.r,B); % Compute matrix exponential
@@ -157,37 +159,18 @@ else
 
             % Get responsibilities
             Z        = get_resp(obs,bf,dat{s},Template,labels,scl,miss,dm_s,opt);   
+            % figure; imshow3D(squeeze(reshape(Z,[dm_s K])))                                          
+
+            if opt.verbose.model >= 3
+                % Write some results to disk (for visualisation in SegModel.m)
+                dat{s} = write_for_visualisation(dm_s,obs,bf,dat{s},Template,v,labels,scl,miss,nam,prm_v,opt);
+            end      
+            Greens   = [];
+            v        = [];
             labels   = []; 
             Template = []; 
             bf       = [];
             miss     = [];
-            % figure; imshow3D(squeeze(reshape(Z,[dm_s K])))                                          
-
-            if opt.verbose.model >= 3
-                % Write 2D versions to disk (for verbose) of..
-                ix_z = floor(dm_s(3)/2) + 1;
-
-                % ..responsibilities 
-                dat{s}.pth.seg2d = fullfile(opt.dir_seg2d,['seg2d_' nam '.nii']);
-                spm_misc('create_nii',dat{s}.pth.seg2d,Z(:,:,ix_z,:),mat_s,[spm_type('float32') spm_platform('bigend')],'seg2d');                        
-
-                % ..of image (only one channel)
-                [~,~,~,~,~,~,~,chn_names] = obs_info(dat{s}); 
-                for i=1:numel(chn_names)
-                   if strcmpi(chn_names{i},'T1')
-                       break
-                   end
-                end
-
-                im              = reshape(obs(:,i),dm_s(1:3));
-                im              = im(:,:,ix_z);
-                dat{s}.pth.im2d = fullfile(opt.dir_seg2d,['im2d_' nam '.nii']);
-                spm_misc('create_nii',dat{s}.pth.im2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'im2d');   
-                
-                dat{s}.pth.bfim2d = fullfile(opt.dir_seg2d,['bfim2d_' nam '.nii']);
-                spm_misc('create_nii',dat{s}.pth.bfim2d,im,mat_s,[spm_type('float32') spm_platform('bigend')],'bfim2d');    
-                im              = [];
-            end            
             
             % Push responsibilities in subject space to template space
             Z = push_responsibilities(Z,y,dm_a(1:3)); 
@@ -195,7 +178,7 @@ else
             % figure; imshow3D(squeeze(Z))
     
             % Compute gradients and Hessian
-            [gr_s,H_s,ll_s] = diff_template(a,Z,prop,opt); 
+            [gr_s,H_s,ll_s] = diff_template(a,Z,prop,opt,is_init); 
             Z               = [];            
 
             % Add to global derivatives using bounding box         
