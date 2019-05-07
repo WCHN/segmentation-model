@@ -6,8 +6,6 @@
 % for intensities, and hyper-parameters of a dirichlet prior on the
 % proportions of tissues. All these are stored in './output/train/model'.
 %
-% Once trained, the model can be used to segment a new subject using the
-% seg_MRBrainS18_2d script in this folder.
 % _________________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
 
@@ -27,27 +25,27 @@ dir_data = './data-MRBrainS18-2d';
 %--------------------------------------------------------------------------
 
 % These two are mandatory (for now)
-opt.dep.aux_toolbox  = '/path/to/auxiliary-functions';   % https://github.com/WTCN-computational-anatomy-group/auxiliary-functions
-opt.dep.dist_toolbox = '/path/to/distributed-computing'; % https://github.com/WTCN-computational-anatomy-group/distributed-computing
+% opt.dep.aux_toolbox  = '/path/to/auxiliary-functions';   % https://github.com/WTCN-computational-anatomy-group/auxiliary-functions
+% opt.dep.dist_toolbox = '/path/to/distributed-computing'; % https://github.com/WTCN-computational-anatomy-group/distributed-computing
+opt.dep.aux_toolbox  = '/home/mbrud/dev/mbrud/code/matlab/auxiliary-functions';   % https://github.com/WTCN-computational-anatomy-group/auxiliary-functions
+opt.dep.dist_toolbox = '/home/mbrud/dev/mbrud/code/matlab/distributed-computing'; % https://github.com/WTCN-computational-anatomy-group/distributed-computing
 
 % Directory for learnt model (and temp files)
 opt.dir_output = './output';
 
 % Template options
-opt.template.do       = true;
-opt.model.nam_cls     = {'1.gm','2.bas','3.wm','4.wmh','5.csf','6.ven','7.bg','8.st','9.skl'};
-opt.template.K        = 9;
-opt.template.bg_class = 7;
+opt.template.do = true;
+opt.template.K  = 10;
 
-% For mapping labels to tissue classes
+% % For mapping labels to tissue classes
 map                = containers.Map;
-map('MRBrainS18')  = [1 2 3 4 5 6 0 0 0];
+map('MRBrainS18')  = {6,7,8,9,5,4,[]}; % 1.CGM 2.BG 3.WM 4.WMH 5.CSF 6.VEN
 opt.gmm.labels.cm  = map;
 opt.gmm.labels.use = true;
 
 % For using multiple Gaussians per tissue
 map          = containers.Map;
-map('MRI')   = [1 2 3 4 5 5 6 6 7 7 8 8 8 9 9];
+map('MRI')   = repelem(1:opt.template.K,2); 
 opt.dict.lkp = map;
 
 %--------------------------------------------------------------------------
