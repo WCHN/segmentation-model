@@ -35,7 +35,7 @@ opt.dir_output = './output';
 opt.template.do = true;
 opt.template.K  = 10;
 
-% % For mapping labels to tissue classes
+% For mapping labels to tissue classes
 map                = containers.Map;
 map('MRBrainS18')  = {6,7,8,9,5,4,[]}; % 1.CGM 2.BG 3.WM 4.WMH 5.CSF 6.VEN
 opt.gmm.labels.cm  = map;
