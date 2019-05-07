@@ -25,10 +25,8 @@ dir_data = './data-MRBrainS18-2d';
 %--------------------------------------------------------------------------
 
 % These two are mandatory (for now)
-% opt.dep.aux_toolbox  = '/path/to/auxiliary-functions';   % https://github.com/WTCN-computational-anatomy-group/auxiliary-functions
-% opt.dep.dist_toolbox = '/path/to/distributed-computing'; % https://github.com/WTCN-computational-anatomy-group/distributed-computing
-opt.dep.aux_toolbox  = '/home/mbrud/dev/mbrud/code/matlab/auxiliary-functions';   % https://github.com/WTCN-computational-anatomy-group/auxiliary-functions
-opt.dep.dist_toolbox = '/home/mbrud/dev/mbrud/code/matlab/distributed-computing'; % https://github.com/WTCN-computational-anatomy-group/distributed-computing
+opt.dep.aux_toolbox  = '/path/to/auxiliary-functions';   % https://github.com/WTCN-computational-anatomy-group/auxiliary-functions
+opt.dep.dist_toolbox = '/path/to/distributed-computing'; % https://github.com/WTCN-computational-anatomy-group/distributed-computing
 
 % Directory for learnt model (and temp files)
 opt.dir_output = './output';
