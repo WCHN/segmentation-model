@@ -87,7 +87,7 @@ end
 %==========================================================================
 
 %==========================================================================
-function opt = SegModel_continue(pth_dat,pth_model,pth_opt,pth_holly)
+function opt = SegModel_continue(pth_dat,pth_model,pth_opt,pth_holly,mem_new)
 % Continue training segmentation model from a bunch of images
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
@@ -95,6 +95,8 @@ function opt = SegModel_continue(pth_dat,pth_model,pth_opt,pth_holly)
 %--------------------------------------------------------------------------
 % Load variables (dat, model, opt, holly)
 %--------------------------------------------------------------------------
+
+if nargin < 5, mem_new = []; end
 
 var   = load(pth_dat);
 dat   = var.dat;
@@ -105,6 +107,10 @@ opt   = var.opt;
 var   = load(pth_holly);
 holly = var.holly;
 clear var
+
+if ~isempty(mem_new)
+    holly.job.mem{1} = mem_new;
+end
 
 %--------------------------------------------------------------------------
 % Init paths, etc.
