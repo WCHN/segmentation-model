@@ -4,14 +4,10 @@ This code implements a generative model for learning from neuroimaging data. Onc
 
 ## Example
 
-To familiarise a user/developer with the framework, the demo folder contains two scripts:
+To familiarise a user with the framework, the demo folder contains the script:
 
 **train_MRBrainS18_2d**: Demonstrates using the segmentation-model code to learn from
 MR scans part of the MRBrainS18 segmentation challenge (http://mrbrains18.isi.uu.nl/).
-
-**seg_MRBrainS18_2d**: Demonstrates using the trained segmentation-model to segment
-a subject from the MRBrainS18 segmentation challenge.
-
 
 ## Dependencies
 
