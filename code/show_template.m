@@ -25,7 +25,7 @@ alpha = model.PropPrior.alpha;
 
 show_cat_img(mu,alpha,{title_name},opt.model.nam_cls);
 
-deal_figs(model);
+deal_figs(model,opt);
 %==========================================================================
 
 %==========================================================================

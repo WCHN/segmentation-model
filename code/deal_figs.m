@@ -1,9 +1,13 @@
-function deal_figs(model)
-% FORMAT deal_figs(model)
+function deal_figs(model,opt)
+% FORMAT deal_figs(model,opt)
 %
 % Distribute all plotting windows in a nice way.
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
+
+if ~opt.deal_figs
+    return
+end
 
 screen_size = get(0,'ScreenSize');
 w           = screen_size(3);

@@ -151,5 +151,5 @@ save(fname,'GaussPrior');
 
 model.GaussPrior = GaussPrior;
 
-deal_figs(model);
+deal_figs(model,opt);
 %==========================================================================

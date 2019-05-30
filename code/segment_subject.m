@@ -174,7 +174,7 @@ if opt.verbose.reg >= 3
 end
 if opt.verbose.reg >= 3 || opt.verbose.gmm >= 3  || opt.verbose.bf >= 3
     % Distribute figures
-    deal_figs(model);
+    deal_figs(model,opt);
 end
 
 %--------------------------------------------------------------------------

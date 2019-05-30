@@ -72,5 +72,5 @@ set(cb, 'ticks', 1:K, 'ticklabels', ticklabels);
 
 drawnow;
 
-deal_figs(model);
+deal_figs(model,opt);
 %==========================================================================

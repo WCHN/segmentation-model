@@ -218,6 +218,12 @@ def = spm_shoot_defaults;
 if ~isfield(opt,'dir_output')
     opt.dir_output = './output/';
 end
+if ~isfield(opt,'deal_figs')
+    opt.deal_figs = false;
+end
+if ~isfield(opt,'make_anim')
+    opt.make_anim = false;
+end
 
 % opt.model
 if ~isfield(opt,'model') 

@@ -1,5 +1,9 @@
 function make_animations(operation,opt,iter)
 
+if ~strcmp(operation,'clear') && ~opt.make_anim
+    return
+end
+
 figHandles = findobj('Type', 'figure');
 
 if strcmp(operation,'savefigs')    
