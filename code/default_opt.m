@@ -168,7 +168,7 @@ function [opt,holly] = default_opt(opt)
 %                         tc(1:K,2): Subject space responsibilities, post
 %                         processed
 %                         tc(1:K,3): Template space responsibilities, post
-%                         processed
+%                p         processed
 %                         tc(1:K,4): Modulated template space responsibilities, post
 %                         processed
 %                         tc(1:K,5): DARTEL imports
@@ -245,6 +245,9 @@ if ~isfield(opt.model,'PropPrior')
 end
 if ~isfield(opt.model.PropPrior,'do') 
     opt.model.PropPrior.do = true;
+end
+if ~isfield(opt.model.PropPrior,'equi') 
+    opt.model.PropPrior.equi = false;
 end
 
 % opt.gmm

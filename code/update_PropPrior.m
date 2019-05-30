@@ -62,7 +62,12 @@ for gn=1:100000
     g = alpha .* ( psi(alpha) - psi(sum(alpha)) - meanLogX );
     H = (alpha * alpha') .* (diag(psi(1,alpha)) - psi(1,sum(alpha)) * ones(K));
     
-    H = spm_matcomp('LoadDiag', H);
+    if opt.model.PropPrior.equi
+        g = sum(g);
+        H = max(sum(sum(H)),eps);
+    else
+        H = spm_matcomp('LoadDiag', H);
+    end
     
     % update
     logalpha = logalpha - H\g;
