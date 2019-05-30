@@ -429,7 +429,7 @@ if ~isfield(opt.reg,'int_args')
     opt.reg.int_args     = opt.sched.eul(1);
 end
 if ~isfield(opt.reg,'niter') 
-    opt.reg.niter        = 1;
+    opt.reg.niter        = 3;
 end
 if ~isfield(opt.reg,'tol') 
     opt.reg.tol          = 1e-4;
