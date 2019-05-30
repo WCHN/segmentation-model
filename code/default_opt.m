@@ -253,7 +253,7 @@ if ~isfield(opt.model.PropPrior,'do')
     opt.model.PropPrior.do = true;
 end
 if ~isfield(opt.model.PropPrior,'equi') 
-    opt.model.PropPrior.equi = false;
+    opt.model.PropPrior.equi = true;
 end
 
 % opt.gmm
