@@ -5,39 +5,28 @@ Affine        = eye(4);
 affreg        = 'mni';
 fwhm          = 1;
 
-M               = V(1).mat;
-c               = (V(1).dim+1)/2;
-V(1).mat(1:3,4) = -M(1:3,1:3)*c(:);
-
-[Affine1,ll1]    = maff_reg(V(1),8,(0 + 1)*16,tpm,Affine,affreg);
-Affine1          = Affine1*(V(1).mat/M);
-V(1).mat         = M;
-
-% Run using the origin from the header
-[Affine2,ll2] = maff_reg(V(1),8,(0 + 1)*16,tpm,Affine,affreg);
-
-% Pick the result with the best fit
-if ll1>ll2
-    Affine = Affine1; 
-else
-    Affine = Affine2; 
-end
-
 % Initial affine registration.
 Affine = maff_reg(V(1),3,(fwhm + 1)*16,tpm,Affine,affreg);            
 Affine = maff_reg(V(1),3,fwhm,tpm,Affine,affreg);   
-
-P = M2P(Affine);
+          
+% % Make sure we have the correct ordering
+% oAffine = Affine;
+% r       = spm_imatrix(Affine);
+% ix      = [1:12];
+% M1      = spm_matrix(r(ix));
 
 % Do a least squares fit on the matrix logs to map from 12-parameter
 % maffreg representation to number of basis functions in opt.reg.B
-M1 = P2M1(P);
-e  = eig(M1);
-if isreal(e) && any(e<=0), disp('Possible problem!'); disp(eig(M1)); end
-B  = reshape(opt.reg.B,[16 size(opt.reg.B,3)]);
-P  = B\reshape(real(logm(M1)),[16 1]);
+e  = eig(Affine);
+if isreal(e) && any(e<=0), disp('Possible problem!'); disp(eig(Affine)); end
+B1 = reshape(opt.reg.B,[16 size(opt.reg.B,3)]);
+% B1 = reshape(B,[16 size(B,3)]);
+q  = B1\reshape(real(logm(Affine)),[16 1]);
 
-dat.reg.r = P; % Set affine parameter
+% spm_dexpm(P,opt.reg.B)
+% M1
+
+dat.reg.r = q; % Set affine parameter
 %==========================================================================
 
 %==========================================================================
