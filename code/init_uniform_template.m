@@ -53,7 +53,7 @@ if keep_neck
     V.mat = M;
     bb    = world_bb(V);
 
-    mrg = 25; % mm to remove from bottom (we are in world space, and vx = 1)
+    mrg = 30; % mm to remove from bottom (we are in world space, and vx = 1)
     if d(3) == 1
         bb(1,2) = bb(1,2) + mrg;
     else
@@ -100,7 +100,7 @@ model.template.nii = nifti(pth_template);
 if ~isempty(vx) && d(3) == 1
     dm0  = d;
     mat0 = M;
-    vx0  = sqrt(sum(mat(1:3,1:3).^2));
+    vx0  = sqrt(sum(M(1:3,1:3).^2));
        
     % New orientation matrix and dimensions
     ds    = vx0./vx;
@@ -113,8 +113,8 @@ if ~isempty(vx) && d(3) == 1
     model.template.nii = spm_misc('create_nii',pth_template,zeros([dm K],'single'),mat,[spm_type('float32') spm_platform('bigend')],'template');        
     d                  = dm;
 elseif (opt.template.resize || ~isempty(vx)) && d(3) > 1    
-    model     = resize_template(model,do_resiz,vx,keep_neck);
-    d         = model.template.nii.dat.dim;
+    model = resize_template(model,do_resiz,vx,keep_neck);
+    d     = model.template.nii.dat.dim;
 end
 
 if ~isempty(opt.lesion.hemi)
