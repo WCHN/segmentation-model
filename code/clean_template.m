@@ -16,7 +16,7 @@ if nargin < 3, Verbose = false; end
 BrainClass  = opt.template.clean.brain;
 AirClass    = opt.template.clean.air;
 LesionClass = opt.template.clean.les;
-Tiny        = eps('single');
+Tiny        = 1e-4;
 ThrldBrain  = opt.template.clean.val_brain;
 ThrldAir    = opt.template.clean.val_air;
 FigNum      = 666;
@@ -99,7 +99,7 @@ if ~isempty(BrainClass)
             end
         end        
 
-        for i=1:it_dil_er
+        for i=1:it_dil_er - 1
             msk = imerode(msk, se);
 
             if Verbose
