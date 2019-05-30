@@ -22,7 +22,7 @@ end
 dt = [spm_type('float32') spm_platform('bigend')];
 
 % Affine basis function
-B                   = spm_misc('affine_basis', type, flat);
+B                   = double(spm_misc('affine_basis', type, flat));
 Nr                  = size(B,3);
 opt.reg.B           = B;
 opt.reg.aff_reg_ICO = opt.reg.aff_reg*eye(Nr);
