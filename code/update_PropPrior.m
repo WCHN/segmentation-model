@@ -17,6 +17,12 @@ function model = update_PropPrior(dat,model,opt,it_mod)
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
+if ~opt.prop.do
+    % If not optimising individual proportions, return
+    return;
+end
+
+
 if ~opt.model.PropPrior.do
     % If Dirichlet parameters should not be optimised, return
     return;
