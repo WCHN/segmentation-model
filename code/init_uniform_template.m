@@ -47,25 +47,25 @@ end
 %--------------------------------------------------------------------------
 [M,d] = spm_misc('compute_avg_mat',mats,dms);
 
-if keep_neck
-    % If we model spine, remove a little bit of the bottom of the template
-    V.dim = d;
-    V.mat = M;
-    bb    = world_bb(V);
-
-    mrg = 30; % mm to remove from bottom (we are in world space, and vx = 1)
-    if d(3) == 1
-        bb(1,2) = bb(1,2) + mrg;
-    else
-        bb(1,3) = bb(1,3) + mrg;
-    end
-    
-    mn = bb(1,:);
-    mx = bb(2,:);
-    M  = spm_matrix([mn 0 0 0 ones(1,3)])*spm_matrix([-1 -1 -1]);    
-    d  = ceil(M \ [mx 1]' - 0.1)';
-    d  = d(1:3);
-end
+% if keep_neck %&& d(3) > 1
+%     % If we model spine and 3D, remove a little bit of the bottom of the template
+%     V.dim = d;
+%     V.mat = M;
+%     bb    = world_bb(V);
+% 
+%     mrg = 5; % mm to remove from bottom (we are in world space, and vx = 1)
+%     if d(3) == 1
+%         bb(1,2) = bb(1,2) + mrg;
+%     else
+%         bb(1,3) = bb(1,3) + mrg;
+%     end
+%     
+%     mn = bb(1,:);
+%     mx = bb(2,:);
+%     M  = spm_matrix([mn 0 0 0 ones(1,3)])*spm_matrix([-1 -1 -1]);    
+%     d  = ceil(M \ [mx 1]' - 0.1)';
+%     d  = d(1:3);
+% end
 
 % Write template to disk
 %--------------------------------------------------------------------------
