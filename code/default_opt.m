@@ -224,6 +224,9 @@ end
 if ~isfield(opt,'make_anim')
     opt.make_anim = false;
 end
+if ~isfield(opt,'dir_model')
+    opt.dir_model = '';
+end
 
 % opt.model
 if ~isfield(opt,'model') 
