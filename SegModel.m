@@ -220,6 +220,9 @@ opt = modify_opt(opt,it_mod);
 % Mean correct the rigid-body transforms
 dat = meancorrect_aff(dat,opt);
 
+% Mean correct the subject proportions
+dat = meancorrect_prop(dat,opt);
+
 % Mean correct bias field (also updates posteriors)
 dat = meancorrect_bf(dat,model.GaussPrior,opt);          
 

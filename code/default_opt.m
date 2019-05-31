@@ -576,6 +576,9 @@ end
 if ~isfield(opt.prop,'do')
     opt.prop.do      = true;
 end
+if ~isfield(opt.prop,'norm')
+    opt.prop.norm    = false;
+end
 
 % opt.nline_search
 if ~isfield(opt,'nline_search') 
