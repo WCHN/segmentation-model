@@ -216,14 +216,19 @@ clear obs x iy c
 % Some cleaning up of responsibilities
 %--------------------------------------------------------------------------
 
-if opt.clean.brain && dm_a(3) > 1
-    % Clean responsibilities using template, deformation and morphological operations
-    Z = clean_brain(Z,model,opt,y);                
-end
-
 if opt.clean.mrf.strength > 0
     % Ad-hoc MRF clean-up of responsibilities
     Z = mrf_post(Z,vs_s,opt);
+end
+
+if opt.clean.gwc && dm_a(3) > 1
+    % Clean responsibilities using glean_gwc from spm_preproc8_write
+    Z = clean_gwc(Z);                
+end
+
+if opt.clean.brain && dm_a(3) > 1
+    % Clean responsibilities using template, deformation and morphological operations
+    Z = clean_brain(Z,model,opt,y);                
 end
 
 if 0
