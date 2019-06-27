@@ -602,7 +602,10 @@ if ~isfield(opt,'clean')
     opt.clean          = struct;
 end
 if ~isfield(opt.clean,'brain')
-    opt.clean.brain = true;
+    opt.clean.brain = false;
+end
+if ~isfield(opt.clean,'gwc')
+    opt.clean.gwc   = false;
 end
 
 % opt.clean.mrf
