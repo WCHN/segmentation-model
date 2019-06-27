@@ -48,6 +48,6 @@ ny(~isfinite(ny)) = 0;
 id        = cell(3,1);
 [id{1:3}] = ndgrid(single(1:dm(1)),single(1:dm(2)),single(1:dm(3)));
 id        = cat(4,id{:});
-ny        = bsxfun(@times,ny,subsmp.sk4);
+% ny        = bsxfun(@times,ny,subsmp.sk4);
 y         = ny + id; 
 %==========================================================================
