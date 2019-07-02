@@ -510,6 +510,9 @@ end
 if ~isfield(opt.seg,'mskonlynan')
     opt.seg.mskonlynan     = false;
 end
+if ~isfield(opt.seg,'infer_missing')
+    opt.seg.infer_missing  = false;
+end
 
 % opt.seg.mrf
 if ~isfield(opt.seg,'mrf') 

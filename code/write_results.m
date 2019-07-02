@@ -123,12 +123,10 @@ end
 miss   = get_par('missing_struct',obs);
 labels = get_labels(dat,opt);
 Z      = get_final_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt);
-clear labels
 
 if 0
     show_seg(obs,Template,dat.gmm.prop,Z,dm_s,modality);
 end
-clear Template
 
 %--------------------------------------------------------------------------
 % Write non-preprocessed responsibilities to disk
@@ -138,6 +136,37 @@ for k=find(opt.write.tc(:,1)' == true)
     fname = fullfile(dat.dir.seg_orig,['oc' num2str(k) nam{1} '.nii']);
     spm_misc('create_nii',fname,Z(:,:,:,k),mat_s,[spm_type('float32') spm_platform('bigend')],'Segmentation');
 end
+
+%--------------------------------------------------------------------------
+% Infer missing values
+%--------------------------------------------------------------------------
+
+if opt.seg.infer_missing
+    % Get expected means and precisions
+    MU = dat.gmm.cluster{1}{1};
+    A  = dat.gmm.cluster{2}{1};
+    n  = dat.gmm.cluster{2}{2};
+    A  = bsxfun(@times, A, reshape(n, 1, 1, []));
+
+%     % Test with prior instead
+%     pr = model.GaussPrior('IXI');
+%     MU(:,2) = pr{1}(:,2);
+%     A(:,:,2)  = pr{3}(:,:,2);
+%     n(2)  = pr{4}(2);
+%     A  = bsxfun(@times, A, reshape(n, 1, 1, []));
+
+    % Get numel(lkp) sized responsibilities
+    Ztmp  = get_final_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt,false);
+    
+    % Infer missing values
+    obs_miss = spm_gmm_lib('InferMissing', bf.*obs, reshape(Ztmp,[size(obs,1) size(Ztmp,4)]), {MU,A}, {miss.C,miss.L});
+    clear Ztmp
+    
+    if 1
+        show_seg(obs_miss,Template,dat.gmm.prop,Z,dm_s,modality);
+    end
+end
+clear Template labels
 
 %--------------------------------------------------------------------------
 % Write bias field
@@ -223,7 +252,7 @@ end
 
 if opt.clean.gwc && dm_a(3) > 1
     % Clean responsibilities using glean_gwc from spm_preproc8_write
-    Z = clean_gwc(Z);                
+    Z = clean_gwc(Z,opt.template.clean.ix);                
 end
 
 if opt.clean.brain && dm_a(3) > 1
@@ -410,7 +439,7 @@ end
 %==========================================================================
 
 %==========================================================================
-function Z = get_final_resp(obs,bf,dat,template,labels,BinWidth,miss,dm,opt)
+function Z = get_final_resp(obs,bf,dat,template,labels,BinWidth,miss,dm,opt,clus2temp)
 % FORMAT Z = get_final_resp(obs,bf,dat,template,labels,BinWidth,miss,dm,opt)
 %
 % Computes subject responsibilities, filling in unobserved values with the
@@ -418,11 +447,17 @@ function Z = get_final_resp(obs,bf,dat,template,labels,BinWidth,miss,dm,opt)
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
+if nargin < 10, clus2temp = true; end
+
 % Parameters
 cluster = dat.gmm.cluster;
 prop    = dat.gmm.prop;
 part    = dat.gmm.part;
-K       = max(part.lkp);
+if clus2temp
+    K   = max(part.lkp);
+else
+    K   = numel(part.lkp);
+end
 const   = spm_gmm_lib('Const', cluster{1}, cluster{2}, miss.L);
 ix_tiny = get_par('ix_tiny',dat.population,part.lkp,opt);
 
@@ -443,9 +478,11 @@ for z=1:dm(3)
     % Get responsibilities for a slice
     Z_slice = get_resp_slice(slice,cluster,prop,part,miss,const,lnPzNz,ix_tiny);
 
-    % Go from cluster to tissue responsibilities
-    Z_slice = cluster2template(Z_slice,part);    
-
+    if clus2temp
+        % Go from cluster to tissue responsibilities
+        Z_slice = cluster2template(Z_slice,part);    
+    end
+    
     % Map slice into full responsibilities
     Z(:,:,z,:) = reshape(Z_slice,[dm(1:2) 1 K]);
 end
