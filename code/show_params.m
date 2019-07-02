@@ -17,9 +17,15 @@ P           = numel(populations);
 S0          = numel(dat);
 K           = opt.template.K;
 is2d        = model.template.nii.dat.dim(3) == 1;
+mx_rows     = opt.verbose.mx_rows;
 
-nrows         = min(S0,opt.verbose.mx_rows); 
-nrows_per_pop = floor(nrows/P);
+if isempty(mx_rows)
+    mx_rows = P;
+else
+    
+end
+nrows               = min(S0,mx_rows); 
+nrows_per_pop       = floor(nrows/P);
 if is2d
     ncols     = 7;
 else

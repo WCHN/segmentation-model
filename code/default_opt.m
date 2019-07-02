@@ -759,7 +759,7 @@ if ~isfield(opt.verbose,'level')
     opt.verbose.level   = 2;
 end
 if ~isfield(opt.verbose,'mx_rows') 
-    opt.verbose.mx_rows = 8;
+    opt.verbose.mx_rows = [];
 end
 if ~isfield(opt.verbose,'model') 
     opt.verbose.model = 0; % [0,1,2,3]

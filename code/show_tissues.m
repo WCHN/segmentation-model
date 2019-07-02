@@ -16,6 +16,7 @@ populations = spm_json_manager('get_populations',dat);
 P           = numel(populations);
 S0          = numel(dat);
 is2d        = model.template.nii.dat.dim(3) == 1;
+mx_rows     = opt.verbose.mx_rows;
 
 if is2d
     % image, segmentations, warped template, proportions
@@ -25,8 +26,13 @@ else
     ncols = 10;
 end
 
-nrows         = min(S0,opt.verbose.mx_rows); 
-nrows_per_pop = floor(nrows/P);
+if isempty(mx_rows)
+    mx_rows = P;
+else
+    
+end
+nrows               = min(S0,mx_rows); 
+nrows_per_pop       = floor(nrows/P);
 
 rng('default') 
 rng(1);    
