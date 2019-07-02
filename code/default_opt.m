@@ -560,7 +560,7 @@ if ~isfield(opt.bf,'mc_bf')
     opt.bf.mc_bf         = false;
 end
 if ~isfield(opt.bf,'biasreg')
-    opt.bf.biasreg       = 1e4;
+    opt.bf.biasreg       = 1e6;
 end
 if ~isfield(opt.bf,'do')
     opt.bf.do            = true;
