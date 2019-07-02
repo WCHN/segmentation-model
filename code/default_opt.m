@@ -303,7 +303,7 @@ if ~isfield(opt.gmm,'GaussPrior')
     opt.gmm.GaussPrior             = struct;
 end
 if ~isfield(opt.gmm.GaussPrior,'constrained') 
-    opt.gmm.GaussPrior.constrained = false;
+    opt.gmm.GaussPrior.constrained = true;
 end
 if ~isfield(opt.gmm.GaussPrior,'verbose') 
     opt.gmm.GaussPrior.verbose     = true; % [true,false]
