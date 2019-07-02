@@ -422,7 +422,19 @@ if ~isfield(opt.template.clean,'dil_er')
     opt.template.clean.dil_er   = false;
 end
 if ~isfield(opt.template.clean,'it_dil_er')
-    opt.template.clean.it_dil_er   = 8;
+    opt.template.clean.it_dil_er = 8;
+end
+if ~isfield(opt.template.clean,'ix')
+    opt.template.clean.ix        = struct;
+end
+if ~isfield(opt.template.clean.ix,'gm')
+    opt.template.clean.ix.gm     = [1];
+end
+if ~isfield(opt.template.clean.ix,'wm')
+    opt.template.clean.ix.wm     = [2];
+end
+if ~isfield(opt.template.clean.ix,'cs')
+    opt.template.clean.ix.cs     = [3];
 end
 
 % opt.reg

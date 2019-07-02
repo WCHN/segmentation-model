@@ -1,13 +1,13 @@
-function [P] = clean_gwc(P,level)
-if nargin<2, level = 1; end
-% GM=1 -> GM=4
-% WM=2 -> WM=5
-% CS=3 -> CS=3
-ixwm = 5;
-ixgm = 4;
-ixcs = 3;
+function [P] = clean_gwc(P,ix,level)
+if nargin < 2
+    % Default SPM12 template ordering
+    ix.gm = 1;
+    ix.wm = 2;
+    ix.cs = 3;
+end
+if nargin < 3, level = 1; end
 
-b    = P(:,:,:,ixwm);
+b = P(:,:,:,ix.wm);
 
 % Build a 3x3x3 seperable smoothing kernel
 %--------------------------------------------------------------------------
@@ -26,8 +26,8 @@ niter2 = 32;
 for j=1:niter
     if j>2, th=th1; else th=0.6; end  % Dilate after two its of erosion
     for i=1:size(b,3)
-        gp       = double(P(:,:,i,ixgm));
-        wp       = double(P(:,:,i,ixwm));
+        gp       = double(P(:,:,i,ix.gm));
+        wp       = double(P(:,:,i,ix.wm));
         bp       = double(b(:,:,i));
         bp       = (bp>th).*(wp+gp);
         b(:,:,i) = bp;
@@ -40,9 +40,9 @@ if niter2 > 0
     c = b;
     for j=1:niter2
         for i=1:size(b,3)
-            gp       = double(P(:,:,i,ixgm));
-            wp       = double(P(:,:,i,ixwm));
-            cp       = double(P(:,:,i,ixcs));
+            gp       = double(P(:,:,i,ix.gm));
+            wp       = double(P(:,:,i,ix.wm));
+            cp       = double(P(:,:,i,ix.cs));
             bp       = double(c(:,:,i));
             bp       = (bp>th).*(wp+gp+cp);
             c(:,:,i) = bp;
@@ -58,14 +58,14 @@ for i=1:size(b,3)
         slices{k1} = double(P(:,:,i,k1));
     end
     bp           = double(b(:,:,i));
-    bp           = ((bp>th).*(slices{ixgm}+slices{ixwm}))>th;
-    slices{ixgm} = slices{ixgm}.*bp;
-    slices{ixwm} = slices{ixwm}.*bp;
+    bp           = ((bp>th).*(slices{ix.gm}+slices{ix.wm}))>th;
+    slices{ix.gm} = slices{ix.gm}.*bp;
+    slices{ix.wm} = slices{ix.wm}.*bp;
 
     if niter2>0
         cp           = double(c(:,:,i));
-        cp           = ((cp>th).*(slices{ixgm}+slices{ixwm}+slices{ixcs}))>th;
-        slices{ixcs} = slices{ixcs}.*cp;
+        cp           = ((cp>th).*(slices{ix.gm}+slices{ix.wm}+slices{ix.cs}))>th;
+        slices{ix.cs} = slices{ix.cs}.*cp;
     end
     tot       = zeros(size(bp))+eps;
     for k1=1:size(P,4)
