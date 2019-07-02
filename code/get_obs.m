@@ -79,6 +79,9 @@ if isfield(dat.modality{1},'channel')
         else
             % Scaling factor to make intensities more similar
             scl(c) = double(val/nanmean(nanmean(nanmean(obs1(:,:,:)))));            
+            if ~isfinite(scl(c))
+                scl(c) = 1;
+            end
         end
         
         if do_scl
@@ -114,6 +117,9 @@ else
     else
         % Scaling factor to make intensities more similar
         scl = double(val/nanmean(nanmean(nanmean(obs(:,:,:)))));
+        if ~isfinite(scl)
+            scL = 1;
+        end
     end
     
     if do_scl
