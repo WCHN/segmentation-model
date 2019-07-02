@@ -442,7 +442,7 @@ if ~isfield(opt,'reg')
     opt.reg              = struct;
 end
 if ~isfield(opt.reg,'rparam0') 
-    opt.reg.rparam0 = def.rparam;
+    opt.reg.rparam0 = def.rparam*2;
 %     opt.reg.rparam0      = [1e-4  1e-1 2 0.25 0.5]*0.01;%[0 0.005 0.2 0.025 0.05];
 end
 if ~isfield(opt.reg,'rparam') 
@@ -453,7 +453,7 @@ if ~isfield(opt.reg,'int_args')
     opt.reg.int_args     = opt.sched.eul(1);
 end
 if ~isfield(opt.reg,'niter') 
-    opt.reg.niter        = 3;
+    opt.reg.niter        = 1;
 end
 if ~isfield(opt.reg,'tol') 
     opt.reg.tol          = 1e-4;
