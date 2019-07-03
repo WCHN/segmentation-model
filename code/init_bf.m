@@ -1,8 +1,8 @@
-function dat = init_bf(dat,opt,scl)
+function dat = init_bf(dat,opt)
 % FORMAT dat = init_bf(dat,opt,[scl])
 % dat   - Subjects data structure
 % opt   - Options structure
-% scl   - Scaling of the data (that kind of aligns histograms)
+% 
 %
 % Init registration related variables:
 % * dat.bf.chan(:).C:       Bias precision matrix
@@ -13,7 +13,8 @@ function dat = init_bf(dat,opt,scl)
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
-if opt.bf.do
+if opt.bf.do    
+    
     biasreg = opt.bf.biasreg;
     fwhm    = opt.bf.biasfwhm;
     S0      = numel(dat);
@@ -25,11 +26,8 @@ if opt.bf.do
         if strcmpi(modality,'MRI')
             [dm,~,vs,C] = obs_info(dat{s});
             ff          = get_ff(vs);               
-
-            if nargin < 3
-                [~,~,~,~,scl1] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
-                scl{s}         = scl1;
-            end
+                        
+            [~,~,~,~,scl] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
 
             [~,grd] = get_subsampling_grid(dm,vs,opt.seg.samp);
 
@@ -62,7 +60,7 @@ if opt.bf.do
                 b2 = dat{s}.bf.chan(c).B2(1,1);
                 b3 = dat{s}.bf.chan(c).B3(1,1);
 
-                dat{s}.bf.chan(c).T(1,1,1) = 1/(b1*b2*b3)*log(scl{s}(c));
+                dat{s}.bf.chan(c).T(1,1,1) = 1/(b1*b2*b3)*log(scl(c));
             end
         end
     end

@@ -131,11 +131,6 @@ else
     Template = warp_template(model,y,Affine);  
 end
 
-if ~strcmpi(modality,'ct') && ~opt.template.do
-    % Get posteriors using the aligned template
-    dat.gmm.cluster = get_cluster(obs,bf,dm_s,GaussPrior,miss,{Template,dat.gmm.prop,labels,dat.gmm.part},'sort_pars',false);
-end
-
 if opt.do.mrf
     % When using an MRF, store previous responsibilities, etc., in the mrf
     % field of dat
@@ -162,7 +157,7 @@ if opt.verbose.gmm >= 3
 end
 if opt.verbose.gmm >= 4
     % Show GMM
-    show_gmm(dat,obs)
+    show_gmm(dat,obs);
 end
 if opt.verbose.bf >= 3
     % Show bias field
@@ -175,6 +170,15 @@ end
 if opt.verbose.reg >= 3 || opt.verbose.gmm >= 3  || opt.verbose.bf >= 3
     % Distribute figures
     deal_figs(model,opt);
+end
+
+if ~opt.template.do && do_bf
+    % Update bias-field parameters (when segmenting a new subject)
+    % This is done to try to align intensities a bit with the prior, before
+    % starting to estimate the GMM posterios
+    for it_bf=1:opt.bf.niter                                 
+        [dat,bf] = update_bf(dat,obs,bf,Template,dm_s,labels,miss,opt);                            
+    end  
 end
 
 %--------------------------------------------------------------------------

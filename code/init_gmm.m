@@ -11,9 +11,10 @@ function [dat,model,scl] = init_gmm(dat,model,opt)
 
 % Parameters
 %--------------------------------------------------------------------------
-S0    = numel(dat);
-niter = opt.gmm.hist.niter_main;
-opt.gmm.verbose = opt.gmm.hist.verbose_gmm;
+S0                             = numel(dat);
+niter                          = opt.gmm.hist.niter_main;
+opt.gmm.verbose                = opt.gmm.hist.verbose_gmm;
+opt.gmm.GaussPrior.constrained = false; % This is disabled here just for speed
 
 % Observations from histograms
 %--------------------------------------------------------------------------

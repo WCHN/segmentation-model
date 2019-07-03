@@ -469,7 +469,7 @@ if ~isfield(opt.reg,'mc_aff')
     opt.reg.mc_aff       = true;
 end
 if ~isfield(opt.reg,'aff_type') 
-    opt.reg.aff_type     = 'similitude'; % ['translation','rotation','rigid','similitude','affine']
+    opt.reg.aff_type     = 'affine'; % ['translation','rotation','rigid','similitude','affine']
 end
 if ~isfield(opt.reg,'aff_reg') 
     opt.reg.aff_reg      = 0;
@@ -481,7 +481,7 @@ if ~isfield(opt.reg,'do_nl')
     opt.reg.do_nl        = true;
 end
 if ~isfield(opt.reg,'nit_init_aff') 
-    opt.reg.nit_init_aff = 12;
+    opt.reg.nit_init_aff = 24;
 end
 if ~isfield(opt.reg,'init_aff_tol') 
     opt.reg.init_aff_tol = 1e-4;

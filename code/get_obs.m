@@ -26,13 +26,11 @@ p.FunctionName = 'get_obs';
 p.addRequired( 'dat', @isstruct);
 p.addParameter('do_scl', false, @islogical);
 p.addParameter('mask', true, @islogical);
-p.addParameter('val', 100,  @isnumeric);
 p.addParameter('mskonlynan',false,@islogical);
 p.addParameter('samp', 0, @isnumeric);
 p.parse(varargin{:});
 dat        = p.Results.dat;
 do_scl     = p.Results.do_scl;
-val        = p.Results.val;
 do_msk     = p.Results.mask;
 mskonlynan = p.Results.mskonlynan;
 samp       = p.Results.samp;
@@ -40,6 +38,9 @@ samp       = p.Results.samp;
 % Sanity-check image data
 %--------------------------------------------------------------------------
 [dm,mat,vs,V,C] = check_obs(dat);
+
+% Mean value for rescaling intensities
+val = dat.bf.scl;
 
 % Sub-sampling    
 [subsmp,grd] = get_subsampling_grid(dm,vs,samp);
@@ -78,7 +79,7 @@ if isfield(dat.modality{1},'channel')
             scl(c) = 1;
         else
             % Scaling factor to make intensities more similar
-            scl(c) = double(val/nanmean(nanmean(nanmean(obs1(:,:,:)))));            
+            scl(c) = double(val(c)/nanmean(nanmean(nanmean(obs1(:,:,:)))));            
             if ~isfinite(scl(c))
                 scl(c) = 1;
             end

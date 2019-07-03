@@ -63,6 +63,9 @@ for s=1:S0
     % Set GaussPrior
     %--------------------------------------------------------------------------
 
+    % Init bf rescaling values
+    dat = init_bf_rescl(dat,opt);
+    
     % Subject info
     [X,~,~,~,~,~,~,mn,mx]     = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
     [~,~,~,C,~,~,~,chn_names] = obs_info(dat{s});    
@@ -179,7 +182,7 @@ for s=1:S0
             %----------------------------------------------------------------------        
 
             if sum(no_GaussPrior) == C
-                % No channels have been initialised -> use uniformative b and n
+                % Ndat{s}.bf.sclo channels have been initialised -> use uniformative b and n
                 pr{2} = b;
                 pr{4} = n;
             end
@@ -216,6 +219,9 @@ for s=1:S0
         fprintf('2 | Intensity prior initialised as uniformative.\n');
     end
 
+    % Update bf rescaling values
+    dat = init_bf_rescl(dat,opt,model);
+    
     % Collapse prior
     [lkp0,mg] = get_par('lkp',dat{s}.modality{1}.name,opt);
     lkp       = pr{7};

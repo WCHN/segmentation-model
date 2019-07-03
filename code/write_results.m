@@ -148,23 +148,27 @@ if opt.seg.infer_missing
     n  = dat.gmm.cluster{2}{2};
     A  = bsxfun(@times, A, reshape(n, 1, 1, []));
 
-%     % Test with prior instead
-%     pr = model.GaussPrior('IXI');
-%     MU(:,2) = pr{1}(:,2);
-%     A(:,:,2)  = pr{3}(:,:,2);
-%     n(2)  = pr{4}(2);
-%     A  = bsxfun(@times, A, reshape(n, 1, 1, []));
-
     % Get numel(lkp) sized responsibilities
-    Ztmp  = get_final_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt,false);
+    Zlkp = get_final_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt,false);
     
     % Infer missing values
-    obs_miss = spm_gmm_lib('InferMissing', bf.*obs, reshape(Ztmp,[size(obs,1) size(Ztmp,4)]), {MU,A}, {miss.C,miss.L});
-    clear Ztmp
+    obs_miss = spm_gmm_lib('InferMissing', bf.*obs, reshape(Zlkp,[size(obs,1) size(Zlkp,4)]), {MU,A}, {miss.C,miss.L});    
     
     if 1
-        show_seg(obs_miss,Template,dat.gmm.prop,Z,dm_s,modality);
+        spm_gmm_lib('plot','gaussprior',model.GaussPrior(dat.population),dat.gmm.part.lkp,'TestFigure');
+        show_gmm(dat,obs_miss);
+        show_seg(bf.*obs_miss,Template,dat.gmm.prop,Z,dm_s,modality);
+        
+        % Some verbose
+        figure(777)
+        nr = floor(sqrt(size(Zlkp,4)));
+        nc = ceil(size(Zlkp,4)/nr);      
+        for k=1:size(Zlkp,4)
+            subplot(nr,nc,k)
+            imagesc3d(Zlkp(:,:,:,k)); axis off; drawnow
+        end   
     end
+    clear Zlkp
 end
 clear Template labels
 
