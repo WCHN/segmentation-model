@@ -16,36 +16,63 @@ niter                          = opt.gmm.hist.niter_main;
 opt.gmm.verbose                = opt.gmm.hist.verbose_gmm;
 opt.gmm.GaussPrior.constrained = false; % This is disabled here just for speed
 
-% Observations from histograms
-%--------------------------------------------------------------------------
-[dat,obs,scl,bw] = get_hists(dat,opt);
+if ~opt.given.GaussPrior
+    % Observations from histograms
+    %--------------------------------------------------------------------------
+    [dat,obs,scl,bw] = get_hists(dat,opt);
 
-% Init VB-GMM
-%--------------------------------------------------------------------------
-[dat,model] = get_gmms(obs,model,dat,opt);
+    % Init VB-GMM
+    %--------------------------------------------------------------------------
+    [dat,model] = get_gmms(obs,model,dat,opt);
 
-% Learn Gauss-Wishart hyper-parameters
-%--------------------------------------------------------------------------
-lb = -Inf(S0,niter);
-for iter=1:niter
-    		
-    parfor s=1:S0 % Iterate over subjects
-        population = dat{s}.population;          
-        
-        % Fit VBGMM (update posteriors and mixing weights)
-        %------------------------------------------------------------------  
-        pr                  = model.GaussPrior(population);
-        [dat{s},lb(s,iter)] = update_gmm_hist(obs{s},dat{s},bw{s},pr,opt);                                       
-    end    
+    % Learn Gauss-Wishart hyper-parameters
+    %--------------------------------------------------------------------------
+    lb = -Inf(S0,niter);
+    for iter=1:niter
+
+        parfor s=1:S0 % Iterate over subjects
+            population = dat{s}.population;          
+
+            % Fit VBGMM (update posteriors and mixing weights)
+            %------------------------------------------------------------------  
+            pr                  = model.GaussPrior(population);
+            [dat{s},lb(s,iter)] = update_gmm_hist(obs{s},dat{s},bw{s},pr,opt);                                       
+        end    
+
+        % Update Gauss-Wishart hyper-parameters
+        %----------------------------------------------------------------------    
+        model = update_GaussPrior(dat,model,opt);    
+    end
+else
+    load(opt.gmm.pth_GaussPrior)
     
-	% Update Gauss-Wishart hyper-parameters
-	%----------------------------------------------------------------------    
-    model = update_GaussPrior(dat,model,opt);    
+    % Collapse prior
+    lkp0         = 1:opt.template.K;
+    populations  = spm_json_manager('get_populations',dat);
+    P            = numel(populations);
+    for p=1:P  
+        population = populations{p}.name;
+        pr         = GaussPrior(population);
+        lkp        = pr{7};
+
+        if ~isequal(lkp0,lkp) 
+            pr(1:4)       = spm_gmm_lib('extras','collapse_gmms',pr(1:4),lkp);
+            lb_pr         = struct;                                        
+            lb_pr.KL_qVpV = 0;
+            lb_pr.ElnDetV = zeros(1,numel(lkp0));
+            pr{6}         = lb_pr;
+            pr{7}         = lkp0;
+        end        
+
+        GaussPrior(population) = pr;
+    end
+        
+    model.GaussPrior = GaussPrior;
 end
 
 % Set prop to uniform
 for s=1:S0
-    dat{s}.gmm.prop = ones(size(dat{s}.gmm.prop));
+    dat{s}.gmm.prop = ones(1,opt.template.K)./opt.template.K;
 end
 
 % Set ElnDetV to zero
@@ -95,8 +122,9 @@ obs = cell(S0,1);
 scl = cell(1,S0);
 bw  = cell(1,S0);
 parfor s=1:S0  
+% for s=1:S0, fprintf('obs! for s=1:S0\n')
     modality             = dat{s}.modality{1}.name;
-    [obs_s,~,~,~,scl{s}] = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
+    [obs_s,~,~,~,scl{s}] = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan,'missmod',opt.seg.missmod); % Do not subsample!
     obs_s                = double(obs_s);
     C                    = size(obs_s,2);
     
@@ -104,7 +132,7 @@ parfor s=1:S0
     %----------------------------------------------------------------------
     mn = min(obs_s,[],1);
     mx = max(obs_s,[],1);
-    if strcmpi(modality,'ct') 
+    if strcmpi(modality,'ct')
         bins  = single((mn:mx).');
         bw{s} = mean(diff(bins));        
     else

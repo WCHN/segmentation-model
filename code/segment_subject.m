@@ -15,7 +15,7 @@ GaussPrior = model.GaussPrior(dat.population); % Intensity prior parameters
 it_mod     = opt.model.it;                     % Model iteration
 
 % Subject parameters
-[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp);
+[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp,'missmod',opt.seg.missmod);
 labels                                           = get_labels(dat,opt,opt.seg.samp,subsmp,grd); % Get labels
 clear grd
 
@@ -66,7 +66,7 @@ if opt.verbose.gmm >= 3
     chn_names{end + 1}        = 'Z';
 end
 
-if ~opt.template.do
+if ~opt.template.do || (opt.given.template && opt.given.GaussPrior && opt.model.it == 1)
     % Set initial posteriors to same values as GaussPrior
     dat.gmm.cluster{1}{1} = GaussPrior{1};
     dat.gmm.cluster{1}{2} = GaussPrior{2};
@@ -78,7 +78,7 @@ end
 % Initial alignment of template
 %--------------------------------------------------------------------------
 
-if ~opt.template.do && dm_s(3) > 1
+if dm_s(3) > 1
     % Align template by mutual information registration
     
     dat = maffreg_template2subject(dat,model,opt);
@@ -172,13 +172,27 @@ if opt.verbose.reg >= 3 || opt.verbose.gmm >= 3  || opt.verbose.bf >= 3
     deal_figs(model,opt);
 end
 
-if ~opt.template.do && do_bf
+if (~opt.template.do || (opt.given.template && opt.given.GaussPrior && opt.model.it == 1)) && do_bf
     % Update bias-field parameters (when segmenting a new subject)
     % This is done to try to align intensities a bit with the prior, before
     % starting to estimate the GMM posterios
+    biasreg0 = opt.bf.biasreg;
+    for c=1:numel(dat.bf.chan)
+        dat.bf.chan(c).C = (1e15/biasreg0)*dat.bf.chan(c).C;
+    end
+    
     for it_bf=1:opt.bf.niter                                 
         [dat,bf] = update_bf(dat,obs,bf,Template,dm_s,labels,miss,opt);                            
+    
+        if it_bf > 1 && ~((dat.lb.last - ooll) > 2*opt.bf.tol*I)
+            break; 
+        end
+        ooll = dat.lb.last;
     end  
+
+    for c=1:numel(dat.bf.chan)
+        dat.bf.chan(c).C = (biasreg0/1e15)*dat.bf.chan(c).C;
+    end
 end
 
 %--------------------------------------------------------------------------
@@ -187,15 +201,8 @@ end
 
 if opt.verbose.gmm, tic; end % Start timer
 
-if opt.template.do
-    % Only do one within subject iteration
-    nit_main = 1;
-else
-    nit_main = opt.seg.niter;
-end
-
 gain = 0;
-for it_seg=1:nit_main   
+for it_seg=1:opt.seg.niter   
     
     do_prop = opt.prop.do   && (it_mod >= opt.start_it.do_prop || it_seg >= opt.start_it.do_prop);    
     do_mg   = opt.do.mg     && (it_mod >= opt.start_it.do_mg   || it_seg >= opt.start_it.do_mg);
@@ -223,6 +230,11 @@ for it_seg=1:nit_main
             [dat,bf] = update_bf(dat,obs,bf,Template,dm_s,labels,miss,opt);             
         end               
     
+        if do_prop  
+            % Update tissue proportions
+            dat = update_prop(obs,bf,dat,Template,labels,scl,dm_s,PropPrior,miss,opt);          
+        end
+        
         if it_bf > 1 && ~((dat.lb.last - ooll) > 2*opt.bf.tol*I)
             break; 
         end
@@ -239,33 +251,33 @@ for it_seg=1:nit_main
     % UPDATE TISSUE PROPORTIONS
     %----------------------------------------------------------------------
     
-    if do_prop         
-        if opt.template.do
-            prop_niter = opt.prop.niter(min(numel(opt.prop.niter),it_mod));
-        else
-            prop_niter = opt.prop.niter(min(numel(opt.prop.niter),it_seg));            
-        end
-
-        for it_prop=1:prop_niter 
-            
-            % Start with updating GMM parameters
-            dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);                               
-
-            % Update tissue proportions
-            dat = update_prop(obs,bf,dat,Template,labels,scl,dm_s,PropPrior,miss,opt);          
-
-            if it_prop > 1 && ~((dat.lb.last - oll)  > 2*opt.bf.tol*I)
-                break; 
-            end
-            oll = dat.lb.last;
-            
-            if opt.verbose.gmm >= 3                        
-                show_seg(obs,Template,dat.gmm.prop, ...
-                         get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
-                         dm_s,modality,chn_names,opt.model.nam_cls);            
-            end
-        end   
-    end
+%     if do_prop         
+%         if opt.template.do
+%             prop_niter = opt.prop.niter(min(numel(opt.prop.niter),it_mod));
+%         else
+%             prop_niter = opt.prop.niter(min(numel(opt.prop.niter),it_seg));            
+%         end
+% 
+%         for it_prop=1:prop_niter 
+%             
+%             % Start with updating GMM parameters
+%             dat = update_gmm(obs,bf,dat,Template,labels,scl,dm_s,GaussPrior,miss,updt_mg,opt);                               
+% 
+%             % Update tissue proportions
+%             dat = update_prop(obs,bf,dat,Template,labels,scl,dm_s,PropPrior,miss,opt);          
+% 
+%             if it_prop > 1 && ~((dat.lb.last - oll)  > 2*opt.bf.tol*I)
+%                 break; 
+%             end
+%             oll = dat.lb.last;
+%             
+%             if opt.verbose.gmm >= 3                        
+%                 show_seg(obs,Template,dat.gmm.prop, ...
+%                          get_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt), ...
+%                          dm_s,modality,chn_names,opt.model.nam_cls);            
+%             end
+%         end   
+%     end
     
     %----------------------------------------------------------------------
     % UPDATE MRF WEIGHTS
@@ -380,7 +392,7 @@ if opt.template.do && opt.template.load_a_der
         clear obs bf Template miss labels
         
         % Get original image(s) and dimensions        
-        [obs,dm_s] = get_obs(dat,'samp',0); 
+        [obs,dm_s] = get_obs(dat,'samp',0,'missmod',opt.seg.missmod); 
         
         if do_bf
             % Resize bias field

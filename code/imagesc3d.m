@@ -17,7 +17,7 @@ elseif dm(3) > 1
     
     % Montage parameters: this is the spacing for picking slices in the
     % z-axis
-    Spacing = 8;
+    Spacing = 1;
     
     % Set up montage
     z  = 1:Spacing:dm(3);

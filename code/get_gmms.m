@@ -43,7 +43,7 @@ parfor s=1:S0
         % Initilisation of GMMs when data is MRI
         %------------------------------------------------------------------
         
-        X    = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan); % Do not subsample!   
+        X    = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan,'missmod',opt.seg.missmod); % Do not subsample!   
         C    = size(X,2);        
         miss = get_par('missing_struct',X);
 
@@ -98,8 +98,23 @@ parfor s=1:S0
             
             sort_pars = false;
             
-            Z = resp_from_kmeans(X,K - sum(ix_tiny));
-                        
+            if any(dat{s}.isct)
+                Z = spm_gmm(X(:,dat{s}.isct),K,'GaussPrior',opt.ct.GaussPrior,'PropPrior',dat{s}.gmm.prop,'Start','prior','Verbose',0,'IterMax',20); 
+            else
+                Z = resp_from_kmeans(X,K - sum(ix_tiny));
+            end
+            
+            if 0
+                figure(888)
+                Ztmp = reshape(Z,[dm K]);
+                nr   = floor(sqrt(K));
+                nc   = ceil(K/nr);      
+                for k=1:K   
+                    subplot(nr,nc,k)
+                    imagesc3d(Ztmp(:,:,:,k)); axis off; drawnow
+                end
+            end
+            
             nZ  = zeros([size(X,1) K],'single');
             cnt = 1;
             for k=1:K

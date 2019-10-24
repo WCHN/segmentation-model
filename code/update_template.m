@@ -9,6 +9,10 @@ function [model,dat] = update_template(dat,model,opt,is_init)
 %__________________________________________________________________________
 % Copyright (C) 2018 Wellcome Centre for Human Neuroimaging
 
+if ~opt.template.update || opt.model.it < opt.template.str_updt
+    return
+end
+
 if nargin < 4, is_init = false; end
 if is_init
     opt.template.niter = 1;             % Number of GN iterations
@@ -90,7 +94,7 @@ else
             end
 
             % Subject parameters
-            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan,'samp',samp);                            
+            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan,'samp',samp,'missmod',opt.seg.missmod);                            
             labels                                           = get_labels(dat{s},opt,samp,subsmp,grd);
             miss                                             = get_par('missing_struct',obs);
             grd                                              = [];            
@@ -158,7 +162,7 @@ else
             [Template,y] = warp_template(model,y,Affine);              
 
             % Get responsibilities
-            Z        = get_resp(obs,bf,dat{s},Template,labels,scl,miss,dm_s,opt);   
+            Z = get_resp(obs,bf,dat{s},Template,labels,scl,miss,dm_s,opt);   
             % figure; imshow3D(squeeze(reshape(Z,[dm_s K])))                                          
 
             if opt.verbose.model >= 3

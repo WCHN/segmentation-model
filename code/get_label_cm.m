@@ -48,6 +48,10 @@ end
 % 
 % M = {[5],[8],[7],[3],[7 8],[9],{[1 2 4 5 10],[9]}};
 
+% rater_sens = 0.99;
+% AL         = {8,9,[1 2 3 4 5 6 7 9]};
+% K          = 9;
+
 L  = numel(AL);    % Number of labels
 CM = zeros([L K]); % Allocate confusion matrix
 for l=1:L % Loop over labels

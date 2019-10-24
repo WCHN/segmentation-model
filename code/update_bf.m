@@ -33,6 +33,8 @@ ix_tiny     = get_par('ix_tiny',dat.population,part.lkp,opt);      % Labels to t
 
 for c=1:nb_channels % Loop over channels
     
+    if dat.isct(c) || allmissing(obs(:,c)), continue; end
+    
     % Neighborhood part
     lnPzN = gmm_mrf('apply',dat.mrf);
 
@@ -225,4 +227,13 @@ dc.int = scl_from_bf(chan);
 dat.bf.chan   = chan;
 dat.bf.dc     = dc;
 dat.armijo.bf = armijo;
+%==========================================================================
+
+%==========================================================================
+function miss = allmissing(obs)
+miss = false;
+nm   = sum((obs == 0) + (~isfinite(obs)));
+if nm  == numel(obs)
+    miss = true;
+end
 %==========================================================================

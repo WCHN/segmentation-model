@@ -67,7 +67,7 @@ for s=1:S0
     dat = init_bf_rescl(dat,opt);
     
     % Subject info
-    [X,~,~,~,~,~,~,mn,mx]     = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
+    [X,~,~,~,~,~,~,mn,mx]     = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan,'missmod',opt.seg.missmod); % Do not subsample!
     [~,~,~,C,~,~,~,chn_names] = obs_info(dat{s});    
 
     % Uninformative VBGMM hyper-parameters

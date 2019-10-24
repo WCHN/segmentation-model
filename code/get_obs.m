@@ -28,19 +28,25 @@ p.addParameter('do_scl', false, @islogical);
 p.addParameter('mask', true, @islogical);
 p.addParameter('mskonlynan',false,@islogical);
 p.addParameter('samp', 0, @isnumeric);
+p.addParameter('missmod', [], @(x) isstruct(x) || isnumeric(x));
 p.parse(varargin{:});
 dat        = p.Results.dat;
 do_scl     = p.Results.do_scl;
 do_msk     = p.Results.mask;
 mskonlynan = p.Results.mskonlynan;
 samp       = p.Results.samp;
+missmod    = p.Results.missmod;
 
 % Sanity-check image data
 %--------------------------------------------------------------------------
 [dm,mat,vs,V,C] = check_obs(dat);
 
 % Mean value for rescaling intensities
-val = dat.bf.scl;
+if isfield(dat,'bf') && isfield(dat.bf,'scl')
+    val = dat.bf.scl;
+else
+    val = 100*ones(1,C);
+end
 
 % Sub-sampling    
 [subsmp,grd] = get_subsampling_grid(dm,vs,samp);
@@ -68,14 +74,26 @@ if isfield(dat.modality{1},'channel')
         else
             obs1 = dat.modality{1}.channel{c}.nii.dat(:,:,:);            
         end
+         
+        if ~isempty(missmod) && missmod.chn(c)
+            if strcmp(missmod.type,'channel') 
+                obs1(:,:,:) = NaN;
+            elseif strcmp(missmod.type,'fov')
+                obs1        = rem_fov(obs1,missmod.ax(c),missmod.prct);
+            end
+        end
         
         if do_msk
             % Exclude locations where any of the images is not finite, or is zero. 
-            msk        = spm_misc('msk_modality',obs1,modality,mskonlynan);
+            if dat.isct(c)
+                msk    = spm_misc('msk_modality',obs1,'CT',mskonlynan);
+            else
+                msk    = spm_misc('msk_modality',obs1,modality,mskonlynan);
+            end
             obs1(~msk) = NaN;
         end
         
-        if strcmpi(modality,'ct')
+        if strcmpi(modality,'ct') || dat.isct(c)
             scl(c) = 1;
         else
             % Scaling factor to make intensities more similar
@@ -107,19 +125,31 @@ else
     else
         obs = dat.modality{1}.nii.dat(:,:,:);
     end
-    
+
+    if ~isempty(missmod) && missmod.chn(1)
+        if strcmp(missmod.type,'channel') 
+            obs(:,:,:) = NaN;
+        elseif strcmp(missmod.type,'fov')
+            obs        = rem_fov(obs,missmod.ax(1),missmod.prct);
+        end
+    end
+        
     if do_msk
         % Exclude locations where any of the images is not finite, or is zero. 
-        msk       = spm_misc('msk_modality',obs,modality,mskonlynan); % figure(666);imshow3D(msk)
+        if dat.isct(1)
+            msk   = spm_misc('msk_modality',obs,'CT',mskonlynan);
+        else
+            msk   = spm_misc('msk_modality',obs,modality,mskonlynan); % figure(666);imshow3D(msk)
+        end
         obs(~msk) = NaN;           
     end
-    if strcmpi(modality,'ct')
+    if strcmpi(modality,'ct') || dat.isct(1)
         scl = 1;
     else
         % Scaling factor to make intensities more similar
         scl = double(val/nanmean(nanmean(nanmean(obs(:,:,:)))));
         if ~isfinite(scl)
-            scL = 1;
+            scl = 1;
         end
     end
     
@@ -163,5 +193,35 @@ if numel(dm)==2, dm(3) = 1; end
 
 if any(dm == 1) && find(dm == 1) ~= 3
     error('find(dm == 1) ~= 3')
+end
+%==========================================================================
+
+%==========================================================================
+function obs = rem_fov(obs,ax,prct)
+if ~ax
+    return
+end
+
+dm = size(obs);
+dm = [dm 1];
+
+if     ax == 1
+    ix1 = floor(prct/2*dm(1));
+    ix2 = dm(1) - ix1;
+    
+    obs(1:ix1,:,:)   = NaN;
+    obs(ix2:end,:,:) = NaN;
+elseif ax == 2
+    ix1 = floor(prct/2*dm(2));
+    ix2 = dm(2) - ix1;
+    
+    obs(:,1:ix1,:)   = NaN;
+    obs(:,ix2:end,:) = NaN;    
+elseif ax == 3
+    ix1 = floor(prct/2*dm(3));
+    ix2 = dm(3) - ix1;
+    
+    obs(:,:,1:ix1)   = NaN;
+    obs(:,:,ix2:end) = NaN;    
 end
 %==========================================================================

@@ -27,7 +27,7 @@ function varargout = introduce_lkp(dat,model,opt,varargin)
 K  = opt.template.K;
 S0 = numel(dat);   
 
-if S0 == 1
+if S0 == 1 && ~iscell(dat)
     % ---------------------------------------------------------------------
     % Case 'Segment'
     GaussPrior = varargin{1};
@@ -95,7 +95,7 @@ else
             for s=1:S0
                 population = dat{s}.population;
 
-                if strcmp(population0,population)
+                if strcmp(population0,population) && isfield(dat{s}.gmm,'cluster')
                     dat{s}.gmm.part.lkp = lkp;
                     dat{s}.gmm.part.mg  = mg;
 

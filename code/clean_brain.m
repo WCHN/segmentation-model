@@ -383,7 +383,7 @@ switch lower(action)
 %             imagesc3d(vol2); axis off; drawnow
         end                
         
-        for i = 1:n
+        for i = 1:n - 2
             spm_conv_vol(vol2,vol2,kx,ky,kz,-[1 1 1]);
             vol2 = uint8(vol2>=order);
             

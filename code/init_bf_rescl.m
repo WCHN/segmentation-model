@@ -20,6 +20,10 @@ if nargin == 3
     % If segmenting, not learning model, make sure that the bias field
     % scaling is based on the intensity prior.
 
+    if ~iscell(model)
+        model = {model};
+    end
+    
     % Sum over template voxels
     template = single(model{1}.template.nii.dat(:,:,:,:));
     template = spm_matcomp('softmax',template);  
@@ -52,7 +56,7 @@ if nargin == 3
             MU0 = mg.*MU0;
 
             % Map many-means-per-tissue to one-mean-per tissue
-            val_p = zeros(2,K);
+            val_p = zeros(C,K);
             for k=1:K
                 val_p(:,k) = sum(MU0(:,lkp == k),2);
             end

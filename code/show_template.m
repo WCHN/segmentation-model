@@ -1,8 +1,7 @@
 function show_template(model,opt,S0,figname)
 
-if nargin < 4
-    figname = '(SPM) Template';
-end
+if nargin < 3, S0      = 0;                end
+if nargin < 4, figname = '(SPM) Template'; end
 
 % ---------------------------------------------------------------------
 % Get figure (create if it does not exist)

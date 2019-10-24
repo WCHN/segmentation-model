@@ -163,7 +163,7 @@ SegModel_init(dat,opt);
 %==========================================================================
 
 %==========================================================================
-function opt = SegModel_segment(dat,opt)
+function [opt,qm] = SegModel_segment(dat,opt)
 % Segment images with trained segmentation model
 % _______________________________________________________________________
 %  Copyright (C) 2018 Wellcome Trust Centre for Neuroimaging
@@ -190,8 +190,8 @@ dat = SegModel_init(dat,opt);
 % Segment subject(s)
 %--------------------------------------------------------------------------
                
-[~,dat] = distribute(holly,'segment_subject','inplace',dat,'iter',model,opt);  
-[~,~]   = distribute(holly,'write_results','inplace',dat,'iter',model,opt);      
+[~,dat]  = distribute(holly,'segment_subject','inplace',dat,'iter',model,opt);  
+[~,~,qm] = distribute(holly,'write_results','inplace',dat,'iter',model,opt);      
 %==========================================================================
 
 %==========================================================================

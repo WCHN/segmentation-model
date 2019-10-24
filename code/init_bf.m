@@ -27,7 +27,7 @@ if opt.bf.do
             [dm,~,vs,C] = obs_info(dat{s});
             ff          = get_ff(vs);               
                         
-            [~,~,~,~,scl] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan); % Do not subsample!
+            [~,~,~,~,scl] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan,'missmod',opt.seg.missmod); % Do not subsample!
 
             [~,grd] = get_subsampling_grid(dm,vs,opt.seg.samp);
 

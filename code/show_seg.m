@@ -44,10 +44,19 @@ if dm(3)==1
         
         slice = obs(:,:,1,c);
         slice = permute(slice,[2 1 3]);
-        if strcmpi(modality,'CT')
-            imagesc(slice,[0 100]); axis off xy;
+        if ischar(modality)
+            if strcmpi(modality,'CT')
+                imagesc(slice,[0 100]); axis image off xy;
+            else
+                imagesc(slice); axis image off xy;
+            end
         else
-            imagesc(slice); axis off xy;
+            if modality(c)
+%                 imagesc(slice); axis off xy;
+                imagesc(slice,[0 100]); axis image off xy;
+            else
+                imagesc(slice); axis image off xy;
+            end
         end
         colormap(gca,'gray')
         
@@ -65,7 +74,7 @@ if dm(3)==1
     slice = spm_gmm_lib('plot', 'cat2rgb', slice, colors);
     slice = squeeze(slice(:,:,:,:));
     slice = permute(slice,[2 1 3]);
-    imagesc(slice); axis off xy;      
+    imagesc(slice); axis image off xy;      
 
     colormap(gca,colors)
     cb = colorbar;
@@ -86,7 +95,7 @@ if dm(3)==1
         slice = spm_gmm_lib('plot', 'cat2rgb', slice, colors);
         slice = squeeze(slice(:,:,:,:));
         slice = permute(slice,[2 1 3]);
-        imagesc(slice); axis off xy;      
+        imagesc(slice); axis image off xy;      
 
         colormap(gca,colors)
         cb = colorbar;
@@ -110,10 +119,18 @@ else
         
         slice = obs(:,:,floor(dm(3)/2) + 1,c);
         slice = permute(slice,[2 1 3]);
-        if strcmpi(modality,'CT')
-            imagesc(slice,[0 100]); axis off xy;
+        if ischar(modality)
+            if strcmpi(modality,'CT')
+                imagesc(slice,[0 100]); axis off xy;
+            else
+                imagesc(slice); axis off xy;
+            end
         else
-            imagesc(slice); axis off xy;
+            if modality(c)
+                imagesc(slice,[0 100]); axis off xy;
+            else
+                imagesc(slice); axis off xy;
+            end
         end
         colormap(gca,'gray')
         
@@ -124,10 +141,18 @@ else
         subplot(C0,3,3*(c - 1) + 2)
         
         slice = permute(obs(:,floor(dm(2)/2) + 1,:,c),[3 1 2 4]);  
-        if strcmpi(modality,'CT')
-            imagesc(slice,[0 100]); axis off xy;
+        if ischar(modality)
+            if strcmpi(modality,'CT')
+                imagesc(slice,[0 100]); axis off xy;
+            else
+                imagesc(slice); axis off xy;
+            end
         else
-            imagesc(slice); axis off xy;
+            if modality(c)
+                imagesc(slice,[0 100]); axis off xy;
+            else
+                imagesc(slice); axis off xy;
+            end
         end
         colormap(gca,'gray')
 
@@ -139,10 +164,18 @@ else
         
         slice = permute(obs(floor(dm(1)/2) + 1,:,:,c),[2 3 1 4]);
         slice = permute(slice,[2 1 3]);
-        if strcmpi(modality,'CT')
-            imagesc(slice,[0 100]); axis off xy;
+        if ischar(modality)
+            if strcmpi(modality,'CT')
+                imagesc(slice,[0 100]); axis off xy;
+            else
+                imagesc(slice); axis off xy;
+            end
         else
-            imagesc(slice); axis off xy;
+            if modality(c)
+                imagesc(slice,[0 100]); axis off xy;
+            else
+                imagesc(slice); axis off xy;
+            end
         end
         colormap(gca,'gray')
         

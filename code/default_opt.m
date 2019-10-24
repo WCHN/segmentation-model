@@ -436,13 +436,19 @@ end
 if ~isfield(opt.template.clean.ix,'cs')
     opt.template.clean.ix.cs     = [3];
 end
+if ~isfield(opt.template,'update')
+    opt.template.update = true;
+end
+if ~isfield(opt.template,'str_updt')
+    opt.template.str_updt = 1;
+end
 
 % opt.reg
 if ~isfield(opt,'reg') 
     opt.reg              = struct;
 end
 if ~isfield(opt.reg,'rparam0') 
-    opt.reg.rparam0 = def.rparam*2;
+    opt.reg.rparam0 = def.rparam*4;
 %     opt.reg.rparam0      = [1e-4  1e-1 2 0.25 0.5]*0.01;%[0 0.005 0.2 0.025 0.05];
 end
 if ~isfield(opt.reg,'rparam') 
@@ -505,7 +511,11 @@ if ~isfield(opt,'seg')
     opt.seg                = struct;
 end
 if ~isfield(opt.seg,'niter')
-    opt.seg.niter          = 20;
+    if opt.template.do
+        opt.seg.niter = 1;
+    else
+        opt.seg.niter = 20;
+    end
 end
 if ~isfield(opt.seg,'tol')
     opt.seg.tol            = 1e-4;
@@ -524,6 +534,9 @@ if ~isfield(opt.seg,'mskonlynan')
 end
 if ~isfield(opt.seg,'infer_missing')
     opt.seg.infer_missing  = false;
+end
+if ~isfield(opt.seg,'missmod')
+    opt.seg.missmod = [];
 end
 
 % opt.seg.mrf
@@ -709,11 +722,16 @@ if isempty(opt.ct.GaussPrior)
     lb_prW.KL_qVpV = 0;
     lb_prW.ElnDetV = zeros(1,opt.template.K);
 
-    b  = 1e4*ones(1,opt.template.K);
-    n  = 0.04*ones(1,opt.template.K);    
-    MU = [-995 -50 10 linspace(20,50,opt.template.K - 6) 70 100 500];
-    W  = ones([1 1 opt.template.K]);
+%     b  = 1e4*ones(1,opt.template.K);
+%     n  = 0.04*ones(1,opt.template.K);    
+%     MU = [-995 -50 10 linspace(20,50,opt.template.K - 6) 70 100 500];
+%     W  = ones([1 1 opt.template.K]);
 
+    b  = ones(1,opt.template.K);
+    n  = ones(1,opt.template.K);    
+    MU = linspace(0,100,opt.template.K);
+    W  = ones([1 1 opt.template.K]);
+    
     opt.ct.GaussPrior = {MU,b,W,n,'CT',lb_prW,1:opt.template.K};   
 end
 

@@ -1,13 +1,14 @@
-function res = write_results(dat,model,opt)
+function [res,qm] = write_results(dat,model,opt)
 
 res = struct;
+qm  = struct;
 
 %--------------------------------------------------------------------------
 % Image data, etc
 %--------------------------------------------------------------------------
 
 % samp = 0 -> to here work with the original size image (not a sub-sampled version)
-[obs,dm_s,mat_s,vs_s,scl] = get_obs(dat,'samp',0); 
+[obs,dm_s,mat_s,vs_s,scl] = get_obs(dat,'samp',0,'missmod',opt.seg.missmod); 
 
 [~,~,~,C,nam,~,obs_fnames] = obs_info(dat);
 dm_a                       = model.template.nii.dat.dim;
@@ -67,13 +68,13 @@ if dm_s(3) == 1
 end
 
 %--------------------------------------------------------------------------
-% Write deformation
+% Write initial velocity
 %--------------------------------------------------------------------------
 
 if opt.write.df
     Nii         = nifti;
-    Nii.dat     = file_array(fullfile(dat.dir.def,['def', nam{1}, '.nii']),...
-                             size(y),...
+    Nii.dat     = file_array(fullfile(dat.dir.def,['v', nam{1}, '.nii']),...
+                             size(v),...
                              [spm_type('float32') spm_platform('bigend')],...
                              0,1,0);
     Nii.mat     = mat_s;
@@ -81,7 +82,7 @@ if opt.write.df
     Nii.descrip = 'Initial velocity';
     create(Nii);
 
-    Nii.dat(:,:,:,:) = y;
+    Nii.dat(:,:,:,:) = v;
 end
 
 %--------------------------------------------------------------------------
@@ -150,23 +151,90 @@ if opt.seg.infer_missing
 
     % Get numel(lkp) sized responsibilities
     Zlkp = get_final_resp(obs,bf,dat,Template,labels,scl,miss,dm_s,opt,false);
+%     Zlkp = get_final_resp(obs,bf,dat,ones(size(Template))/K,labels,scl,miss,dm_s,opt,false);
     
     % Infer missing values
-    obs_miss = spm_gmm_lib('InferMissing', bf.*obs, reshape(Zlkp,[size(obs,1) size(Zlkp,4)]), {MU,A}, {miss.C,miss.L});    
+    obs_miss = spm_gmm_lib('InferMissing', bf.*obs, reshape(Zlkp,[size(obs,1) size(Zlkp,4)]), {MU,A}, {miss.C,miss.L}, false);    
     
-    if 1
-        spm_gmm_lib('plot','gaussprior',model.GaussPrior(dat.population),dat.gmm.part.lkp,'TestFigure');
-        show_gmm(dat,obs_miss);
-        show_seg(bf.*obs_miss,Template,dat.gmm.prop,Z,dm_s,modality);
+    if 0
+%         spm_gmm_lib('plot','gaussprior',model.GaussPrior(dat.population),dat.gmm.part.lkp,'TestFigure');
+%         show_gmm(dat,obs_miss);
+%         show_seg(obs_miss,Template,dat.gmm.prop,Z,dm_s,dat.isct);
+%         show_bf_and_ivel(obs,dm_s,bf);
+%         show_seg(obs_miss,Template,dat.gmm.prop,Z,dm_s,modality);
         
-        % Some verbose
-        figure(777)
-        nr = floor(sqrt(size(Zlkp,4)));
-        nc = ceil(size(Zlkp,4)/nr);      
-        for k=1:size(Zlkp,4)
-            subplot(nr,nc,k)
-            imagesc3d(Zlkp(:,:,:,k)); axis off; drawnow
+%         % Some verbose
+%         figure(777)
+%         nr = floor(sqrt(size(Zlkp,4)));
+%         nc = ceil(size(Zlkp,4)/nr);      
+%         for k=1:size(Zlkp,4)
+%             subplot(nr,nc,k)
+%             imagesc3d(Zlkp(:,:,:,k)); axis off; drawnow
+%         end   
+
+        obs_full = get_obs(dat,'samp',0); 
+        qm.corr  = zeros(1,C);
+        qm.mse   = zeros(1,C);
+        qm.ssim  = zeros(1,C);
+        qm.psnr  = zeros(1,C);         
+        IM = cell(3,C);
+        for c=1:C
+            obs1 = obs(:,c);
+            mnref = nanmin(obs1(:));
+            msko = isfinite(obs1);
+            obs1(~msko) = 0;
+            
+%             ref = reshape(bf(:,c).*obs_full(:,c),dm_s);
+            ref = reshape(obs_full(:,c),dm_s);
+            mnref = nanmin(ref(:));
+            mskr = isfinite(ref);
+            ref(~mskr) = 0;
+            
+            pred = reshape(obs_miss(:,c),dm_s);
+            msk = isfinite(pred);
+            pred(~msk) = 0;
+
+            qm.corr(c) = corr(pred(:),ref(:));    
+            qm.mse(c)  = immse(pred(:),ref(:));
+            qm.ssim(c) = ssim(pred,ref);
+            qm.psnr(c) = psnr(pred(:),ref(:),max(max(pred(:)),max(ref(:))));
+            
+            ref(~mskr) = mnref;
+                        
+            IM{1,c} = reshape(obs1,dm_s(1:3));
+            IM{2,c} = ref;
+            IM{3,c} = pred;
         end   
+        
+        figure(778)       
+        savedir = '/home/mbrud/dev/mbrud/projects/segmentation-model/SASHIMI/IXI-fov';
+        for c=1:C         
+            imagesc(IM{1,c}'); axis off image xy; drawnow; colormap(gray)            
+            saveas(gcf,fullfile(savedir,[num2str(c) '.png']))            
+            imagesc(IM{2,c}'); axis off image xy; drawnow; colormap(gray)            
+            saveas(gcf,fullfile(savedir,[num2str(C + c) '.png']))
+            imagesc(IM{3,c}'); axis off image xy; drawnow; colormap(gray)
+            saveas(gcf,fullfile(savedir,[num2str(2*C + c) '.png']))
+        end   
+        savedir = '/home/mbrud/dev/mbrud/projects/segmentation-model/SASHIMI/CT-simulation';
+        cnt = 1;
+        for c=[1 1 2 3]         
+            subplot(2,4,cnt)
+            if cnt == 2
+                imagesc(IM{2,c}',[0 100]); axis image off xy; drawnow; colormap(gray)                       
+            else
+                imagesc(IM{2,c}'); axis image off xy; drawnow; colormap(gray)                       
+            end            
+            saveas(gcf,fullfile(savedir,[num2str(cnt) '.png']))
+            subplot(2,4,4 + cnt)
+            if cnt == 2
+                imagesc(IM{3,c}',[0 100]); axis image off xy; drawnow; colormap(gray)                       
+            else
+                imagesc(IM{3,c}'); axis image off xy; drawnow; colormap(gray)                       
+            end
+            saveas(gcf,fullfile(savedir,[num2str(4 + cnt) '.png']))
+            cnt = cnt + 1;
+        end    
     end
     clear Zlkp
 end
@@ -197,7 +265,7 @@ end
 %--------------------------------------------------------------------------
 
 % Multiply observations with bias fields
-obs = get_obs(dat,'samp',0,'mskonlynan',true); % We want to write the non-masked images
+obs = get_obs(dat,'samp',0,'mskonlynan',true,'missmod',opt.seg.missmod); % We want to write the non-masked images
 obs = bf.*obs;
 clear bf
 
@@ -266,12 +334,12 @@ end
 
 if 0
     % Some verbose
-    figure(672)
+    figure(673)
     nr = floor(sqrt(K));
     nc = ceil(K/nr);      
     for k=1:K   
         subplot(nr,nc,k)
-        imagesc3d(Z(:,:,:,k)); axis off; drawnow
+        imagesc3d(Z1(:,:,:,k)); axis off; drawnow
     end
 end
     
