@@ -94,7 +94,7 @@ else
             end
 
             % Subject parameters
-            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan,'samp',samp,'missmod',opt.seg.missmod);                            
+            [obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat{s},'mskonlynan',opt.seg.mskonlynan,'samp',samp,'missmod',opt.seg.missmod,'no_scl',opt.bf.no_scl);                            
             labels                                           = get_labels(dat{s},opt,samp,subsmp,grd);
             miss                                             = get_par('missing_struct',obs);
             grd                                              = [];            

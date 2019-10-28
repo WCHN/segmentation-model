@@ -8,7 +8,7 @@ qm  = struct;
 %--------------------------------------------------------------------------
 
 % samp = 0 -> to here work with the original size image (not a sub-sampled version)
-[obs,dm_s,mat_s,vs_s,scl] = get_obs(dat,'samp',0,'missmod',opt.seg.missmod); 
+[obs,dm_s,mat_s,vs_s,scl] = get_obs(dat,'samp',0,'missmod',opt.seg.missmod,'no_scl',opt.bf.no_scl); 
 
 [~,~,~,C,nam,~,obs_fnames] = obs_info(dat);
 dm_a                       = model.template.nii.dat.dim;
@@ -172,7 +172,7 @@ if opt.seg.infer_missing
 %             imagesc3d(Zlkp(:,:,:,k)); axis off; drawnow
 %         end   
 
-        obs_full = get_obs(dat,'samp',0); 
+        obs_full = get_obs(dat,'samp',0,'no_scl',opt.bf.no_scl); 
         qm.corr  = zeros(1,C);
         qm.mse   = zeros(1,C);
         qm.ssim  = zeros(1,C);
@@ -265,7 +265,7 @@ end
 %--------------------------------------------------------------------------
 
 % Multiply observations with bias fields
-obs = get_obs(dat,'samp',0,'mskonlynan',true,'missmod',opt.seg.missmod); % We want to write the non-masked images
+obs = get_obs(dat,'samp',0,'mskonlynan',true,'missmod',opt.seg.missmod,'no_scl',opt.bf.no_scl); % We want to write the non-masked images
 obs = bf.*obs;
 clear bf
 

@@ -15,7 +15,7 @@ GaussPrior = model.GaussPrior(dat.population); % Intensity prior parameters
 it_mod     = opt.model.it;                     % Model iteration
 
 % Subject parameters
-[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp,'missmod',opt.seg.missmod);
+[obs,dm_s,mat_s,vs_s,scl,~,~,~,~,nam,subsmp,grd] = get_obs(dat,'mskonlynan',opt.seg.mskonlynan,'samp',opt.seg.samp,'missmod',opt.seg.missmod,'no_scl',opt.bf.no_scl);
 labels                                           = get_labels(dat,opt,opt.seg.samp,subsmp,grd); % Get labels
 clear grd
 
@@ -401,7 +401,7 @@ if opt.template.do && opt.template.load_a_der
         clear obs bf Template miss labels
         
         % Get original image(s) and dimensions        
-        [obs,dm_s] = get_obs(dat,'samp',0,'missmod',opt.seg.missmod); 
+        [obs,dm_s] = get_obs(dat,'samp',0,'missmod',opt.seg.missmod,'no_scl',opt.bf.no_scl); 
         
         if do_bf
             % Resize bias field

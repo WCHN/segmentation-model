@@ -581,6 +581,9 @@ end
 if ~isfield(opt.bf,'mc_bf_verbose')
     opt.bf.mc_bf_verbose = false; % [true,false]
 end
+if ~isfield(opt.bf,'no_scl')
+    opt.bf.no_scl = false;
+end
 
 % opt.prop
 if ~isfield(opt,'prop') 

@@ -161,7 +161,7 @@ bw  = cell(1,S0);
 parfor s=1:S0  
 % for s=1:S0, fprintf('obs! for s=1:S0\n')
     modality             = dat{s}.modality{1}.name;
-    [obs_s,~,~,~,scl{s}] = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan,'missmod',opt.seg.missmod); % Do not subsample!
+    [obs_s,~,~,~,scl{s}] = get_obs(dat{s},'do_scl',true,'mskonlynan',opt.seg.mskonlynan,'missmod',opt.seg.missmod,'no_scl',opt.bf.no_scl); % Do not subsample!
     obs_s                = double(obs_s);
     C                    = size(obs_s,2);
     

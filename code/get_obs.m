@@ -29,6 +29,7 @@ p.addParameter('mask', true, @islogical);
 p.addParameter('mskonlynan',false,@islogical);
 p.addParameter('samp', 0, @isnumeric);
 p.addParameter('missmod', [], @(x) isstruct(x) || isnumeric(x));
+p.addParameter('no_scl', false, @islogical);
 p.parse(varargin{:});
 dat        = p.Results.dat;
 do_scl     = p.Results.do_scl;
@@ -36,6 +37,7 @@ do_msk     = p.Results.mask;
 mskonlynan = p.Results.mskonlynan;
 samp       = p.Results.samp;
 missmod    = p.Results.missmod;
+no_scl     = p.Results.no_scl;
 
 % Sanity-check image data
 %--------------------------------------------------------------------------
@@ -93,7 +95,7 @@ if isfield(dat.modality{1},'channel')
             obs1(~msk) = NaN;
         end
         
-        if strcmpi(modality,'ct') || dat.isct(c)
+        if strcmpi(modality,'ct') || dat.isct(c) || no_scl
             scl(c) = 1;
         else
             % Scaling factor to make intensities more similar
@@ -143,7 +145,7 @@ else
         end
         obs(~msk) = NaN;           
     end
-    if strcmpi(modality,'ct') || dat.isct(1)
+    if strcmpi(modality,'ct') || dat.isct(1) || no_scl
         scl = 1;
     else
         % Scaling factor to make intensities more similar
