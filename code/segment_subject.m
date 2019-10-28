@@ -142,6 +142,17 @@ if opt.do.mrf
     end
 end
 
+if opt.given.template && opt.GaussPrior.uninformative && opt.model.it == 1
+   
+    %----------------
+    % Init posteriors from template
+    %----------------
+%         cluster = get_cluster(obs,bf,dm,GaussPrior,miss,in,varargin)
+    dat.gmm.cluster{1}{1} = m;
+    dat.gmm.cluster{2}{1} = V;    
+    clear m V
+end
+
 %--------------------------------------------------------------------------
 % Verbose
 %--------------------------------------------------------------------------
