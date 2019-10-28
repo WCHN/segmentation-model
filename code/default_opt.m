@@ -735,6 +735,14 @@ if isempty(opt.ct.GaussPrior)
     opt.ct.GaussPrior = {MU,b,W,n,'CT',lb_prW,1:opt.template.K};   
 end
 
+% opt.GaussPrior
+if ~isfield(opt,'GaussPrior') 
+    opt.GaussPrior      = struct;
+end
+if ~isfield(opt.GaussPrior,'uninformative')
+    opt.GaussPrior.uninformative = false;
+end
+
 % opt.lesion
 if ~isfield(opt,'lesion') 
     opt.lesion      = struct;

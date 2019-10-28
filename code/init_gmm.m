@@ -16,7 +16,7 @@ niter                          = opt.gmm.hist.niter_main;
 opt.gmm.verbose                = opt.gmm.hist.verbose_gmm;
 opt.gmm.GaussPrior.constrained = false; % This is disabled here just for speed
 
-if ~opt.given.GaussPrior
+if ~opt.given.GaussPrior && ~opt.GaussPrior.uninformative
     % Observations from histograms
     %--------------------------------------------------------------------------
     [dat,obs,scl,bw] = get_hists(dat,opt);
@@ -43,30 +43,67 @@ if ~opt.given.GaussPrior
         %----------------------------------------------------------------------    
         model = update_GaussPrior(dat,model,opt);    
     end
-else
-    load(opt.gmm.pth_GaussPrior)
-    
-    % Collapse prior
-    lkp0         = 1:opt.template.K;
+else    
+    K            = opt.template.K;
+    lkp0         = 1:K;
     populations  = spm_json_manager('get_populations',dat);
     P            = numel(populations);
-    for p=1:P  
-        population = populations{p}.name;
-        pr         = GaussPrior(population);
-        lkp        = pr{7};
-
-        if ~isequal(lkp0,lkp) 
-            pr(1:4)       = spm_gmm_lib('extras','collapse_gmms',pr(1:4),lkp);
-            lb_pr         = struct;                                        
-            lb_pr.KL_qVpV = 0;
-            lb_pr.ElnDetV = zeros(1,numel(lkp0));
-            pr{6}         = lb_pr;
-            pr{7}         = lkp0;
-        end        
-
-        GaussPrior(population) = pr;
-    end
         
+    if opt.GaussPrior.uninformative
+        
+        %----------------
+        % Init uninformative GaussPrior
+        %----------------
+        
+        GaussPrior = containers.Map;
+        
+        for p=1:P  
+            population = populations{p}.name;
+            names      = get_channel_names(dat,populations{p});
+            C          = numel(names);
+            
+            b  = ones(1,K);
+            n  = C*ones(1,K);
+            MU = zeros(C,K);        
+            V  = repmat(eye(C),[1 1 K]);
+
+            pr{1} = MU;
+            pr{2} = b;
+            pr{3} = V;
+            pr{4} = n;    
+            pr{5} = names;    
+            pr{7} = lkp0;
+        
+            GaussPrior(population) = pr;
+        end
+                                
+    else
+        
+        %----------------
+        % Load GaussPrior
+        %----------------
+        
+        load(opt.gmm.pth_GaussPrior)
+
+        % Collapse prior        
+        for p=1:P  
+            population = populations{p}.name;
+            pr         = GaussPrior(population);
+            lkp        = pr{7};
+
+            if ~isequal(lkp0,lkp) 
+                pr(1:4)       = spm_gmm_lib('extras','collapse_gmms',pr(1:4),lkp);
+                lb_pr         = struct;                                        
+                lb_pr.KL_qVpV = 0;
+                lb_pr.ElnDetV = zeros(1,numel(lkp0));
+                pr{6}         = lb_pr;
+                pr{7}         = lkp0;
+            end        
+
+            GaussPrior(population) = pr;
+        end       
+    end
+    
     model.GaussPrior = GaussPrior;
 end
 
