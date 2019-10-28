@@ -147,10 +147,8 @@ if opt.given.template && opt.GaussPrior.uninformative && opt.model.it == 1
     %----------------
     % Init posteriors from template
     %----------------
-%         cluster = get_cluster(obs,bf,dm,GaussPrior,miss,in,varargin)
-    dat.gmm.cluster{1}{1} = m;
-    dat.gmm.cluster{2}{1} = V;    
-    clear m V
+           
+    dat.gmm.cluster = get_cluster(obs,bf,dm_s,GaussPrior,miss,spm_matcomp('softmax',Template));   
 end
 
 %--------------------------------------------------------------------------
