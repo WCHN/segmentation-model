@@ -6,8 +6,8 @@ affreg        = 'mni';
 fwhm          = 1;
 
 % Initial affine registration.
-Affine = maff_reg(V(1),3,(fwhm + 1)*16,tpm,Affine,affreg);            
-Affine = maff_reg(V(1),3,fwhm,tpm,Affine,affreg);   
+Affine = maff_reg(V(1),min(max(opt.seg.samp,1),2)*3,(fwhm + 1)*16,tpm,Affine,affreg);            
+Affine = maff_reg(V(1),min(max(opt.seg.samp,1),2)*3,fwhm,tpm,Affine,affreg);   
           
 % % Make sure we have the correct ordering
 % oAffine = Affine;
