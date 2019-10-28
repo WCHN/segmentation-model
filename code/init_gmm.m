@@ -59,8 +59,8 @@ else
         
         for p=1:P  
             population = populations{p}.name;
+            C          = populations{p}.C;
             names      = get_channel_names(dat,populations{p});
-            C          = numel(names);
             
             b  = ones(1,K);
             n  = C*ones(1,K);
@@ -189,3 +189,19 @@ parfor s=1:S0
     obs{s} = {single(V),single(W)};
 end
 %==========================================================================    
+
+%==========================================================================   
+function chn_names = get_channel_names(dat,population)
+S0    = numel(dat);
+C     = population.C; 
+name  = population.name; 
+for s=1:S0
+   population0 = dat{s}.population;
+   
+   if strcmpi(population0,name)              
+       [~,~,~,~,~,~,~,chn_names] = obs_info(dat{s});              
+       
+       return
+   end
+end
+%==========================================================================   

@@ -215,6 +215,8 @@ for s=1:S0
         if strcmpi(dat{s}.modality{1}.name,'CT')
             pr = opt.ct.GaussPrior;
         end
+        
+        model{s}.GaussPrior(dat{s}.population) = pr;   
 
         fprintf('2 | Intensity prior initialised as uniformative.\n');
     end
