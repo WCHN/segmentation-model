@@ -181,7 +181,7 @@ if opt.verbose.reg >= 3 || opt.verbose.gmm >= 3  || opt.verbose.bf >= 3
     deal_figs(model,opt);
 end
 
-if (~opt.template.do || (opt.given.template && opt.given.GaussPrior && opt.model.it == 1)) && do_bf
+if opt.bf.before_gmm && ((~opt.template.do || (opt.given.template && opt.given.GaussPrior && opt.model.it == 1)) && do_bf)
     % Update bias-field parameters (when segmenting a new subject)
     % This is done to try to align intensities a bit with the prior, before
     % starting to estimate the GMM posterios
@@ -389,7 +389,7 @@ if do_nl
 end
 clear v
 
-if opt.template.do && opt.template.load_a_der
+if opt.template.do && opt.template.load_a_der && ~opt.given.template
     %----------------------------------------------------------------------
     % Compute template derivatives (will be loaded later in
     % update_template)
