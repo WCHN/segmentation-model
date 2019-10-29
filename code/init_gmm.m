@@ -72,6 +72,10 @@ else
             pr{3} = V;
             pr{4} = n;    
             pr{5} = names;    
+            lb_pr         = struct;                                        
+            lb_pr.KL_qVpV = 0;
+            lb_pr.ElnDetV = zeros(1,K);
+            pr{6}         = lb_pr;
             pr{7} = lkp0;
         
             GaussPrior(population) = pr;
